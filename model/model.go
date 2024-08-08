@@ -4,6 +4,7 @@ import (
 	"fmt"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/m31ag/cvkeeper/repo"
 	"strings"
 )
 
@@ -18,18 +19,22 @@ var (
 )
 
 type Model struct {
-	items    []Item
-	cursor   int
-	selected map[int]struct{}
-	level    int
+	repo    repo.Repository
+	files   []repo.File
+	cursor  int
+	checked int
 }
 
-func InitModel() Model {
-	c, l := GetChoicesByLevel(0)
+func InitModel(r repo.Repository) Model {
+	files := r.GetFilesByParentId(-1)
+	checked := 0
+	if len(files) > 0 {
+		checked = files[0].Id
+	}
 	return Model{
-		items:    c,
-		level:    l,
-		selected: make(map[int]struct{}),
+		repo:    r,
+		files:   files,
+		checked: checked,
 	}
 }
 func (m Model) Init() tea.Cmd {
@@ -50,15 +55,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 
 		case "down", "j":
-			if m.cursor < len(m.items)-1 {
+			if m.cursor < len(m.files)-1 {
 				m.cursor++
 			}
 		case "b":
-			if m.level > 0 {
-				return m.ChangeLevel(m.level - 1), nil
+			if m.checked != 0 {
+				return m.Back(), nil
 			}
 		case "enter", " ":
-			return m.ChangeLevel(m.level + 1), nil
+			return m.Forward(), nil
 		}
 	}
 
@@ -67,7 +72,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) View() string {
 	s := fmt.Sprintf("%s\n\n", lipgloss.NewStyle().Width(20).MarginLeft(20).AlignHorizontal(lipgloss.Center).Bold(true).Background(lipgloss.Color("63")).Render("Working tool"))
 
-	for i, item := range m.items {
+	for i, item := range m.files {
 
 		cursor := emptyCursor
 		colored := false
@@ -78,7 +83,7 @@ func (m Model) View() string {
 
 		// Render the row
 
-		s += showItem(fmt.Sprintf(menuFormat, cursor, item.Name), colored)
+		s += showItem(fmt.Sprintf(menuFormat, cursor, item.Filename), colored)
 	}
 
 	// The footer
@@ -96,10 +101,15 @@ func showItem(txt string, colored bool) string {
 	}
 
 }
-func (m Model) ChangeLevel(level int) Model {
-	c, l := GetChoicesByLevel(level)
-	m.items = c
-	m.level = l
+func (m Model) Back() Model {
+	files := m.repo.GetFilesByParentId(m.files[0].ParentId)
+	m.files = files
+	m.cursor = 0
+	return m
+}
+func (m Model) Forward() Model {
+	files := m.repo.GetFilesByParentId(m.files[0].Id)
+	m.files = files
 	m.cursor = 0
 	return m
 }
