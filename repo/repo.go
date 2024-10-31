@@ -6,6 +6,7 @@ import _ "github.com/mattn/go-sqlite3"
 type Repository interface {
 	Save(path, filename, data string) error
 	GetFilesByParentId(id int) []File
+	GetRoot() []File
 }
 type repository struct {
 	db *sql.DB
@@ -14,14 +15,27 @@ type repository struct {
 func (r repository) Save(path, filename, data string) error {
 	return nil
 }
-func (r repository) GetFilesByParentId(id int) []File {
-	row, _ := r.db.Query("select id, filename, is_folder, parent_id from files where parent_id = ?", id)
+func (r repository) GetRoot() []File {
+	row, _ := r.db.Query("select id, filename, is_folder from files where parent_id=-1")
 	defer row.Close()
 	var files []File
 
 	for row.Next() {
 		f := File{}
-		_ = row.Scan(&f.Id, &f.Filename, &f.IsFolder, &f.ParentId)
+		_ = row.Scan(&f.Id, &f.Filename, &f.IsFolder)
+		files = append(files, f)
+
+	}
+	return files
+}
+func (r repository) GetFilesByParentId(id int) []File {
+	row, _ := r.db.Query("select id, filename, is_folder from files where parent_id = $2", id, id)
+	defer row.Close()
+	var files []File
+
+	for row.Next() {
+		f := File{}
+		_ = row.Scan(&f.Id, &f.Filename, &f.IsFolder)
 		files = append(files, f)
 
 	}
@@ -57,10 +71,10 @@ func initTables(db *sql.DB) {
 }
 func initRoot(db *sql.DB) {
 	_, err := db.Exec(`
-	INSERT INTO files (filename, is_folder, parent_id)
-	SELECT 'root', true, 0
+	INSERT INTO files (id, filename, is_folder, parent_id)
+	SELECT -1, 'root', true, 0
 	WHERE NOT EXISTS (
-		SELECT 1 FROM files WHERE filename = 'root' AND parent_id = -1
+		SELECT 1 FROM files WHERE filename = 'root' AND parent_id = 0
 	);
 `)
 	if err != nil {

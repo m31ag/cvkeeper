@@ -2,9 +2,9 @@ package repo
 
 type File struct {
 	Id       int
+	ParentId int
 	Filename string
 	IsFolder bool
-	ParentId int
 }
 
 type CipherData struct {
