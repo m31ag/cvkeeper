@@ -2,6 +2,7 @@ package model
 
 import (
 	"fmt"
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 
@@ -22,6 +23,10 @@ var (
 	historyStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FFFFFF"))
 )
 
+type Input struct {
+	input textinput.Model
+	area  textarea.Model
+}
 type Model struct {
 	repo    repo.Repository
 	files   []repo.File
@@ -29,7 +34,8 @@ type Model struct {
 	checked int
 	path    []int
 	history []string
-	txtin   textinput.Model
+	input   Input
+	isInput bool
 }
 
 func InitModel(r repo.Repository) Model {
@@ -43,50 +49,65 @@ func InitModel(r repo.Repository) Model {
 	path = append(path, -1)
 	history := make([]string, 0)
 	history = append(history, "/root")
-	t := textinput.New()
-	t.Placeholder = "test"
-	t.Focus()
+
 	return Model{
 		repo:    r,
 		files:   files,
 		checked: checked,
 		path:    path,
 		history: history,
-		txtin:   t,
 	}
 }
 func (m Model) Init() tea.Cmd {
 	return nil
 }
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+
+	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 
-		switch msg.String() {
+		if !m.isInput {
+			switch msg.String() {
+			case "ctrl+c", "q":
+				return m, tea.Quit
 
-		case "ctrl+c", "q":
-			return m, tea.Quit
+			case "up", "k":
+				if m.cursor > 0 {
+					m.cursor--
+					return m, cmd
+				}
 
-		case "up", "k":
-			if m.cursor > 0 {
-				m.cursor--
+			case "down", "j":
+				if m.cursor < len(m.files)-1 {
+					m.cursor++
+					return m, cmd
+				}
+			case "b", "left", "h":
+				if m.checked != 0 {
+					return m.Back(), cmd
+				}
+			case "n":
+				m.isInput = true
+				return m.SetInput(), cmd
+			case "enter", " ", "right", "l":
+				return m.Forward(), cmd
+			}
+		} else {
+
+			switch msg.String() {
+
+			case "enter":
+				m.isInput = false
+				return m, nil
+			default:
+				m.input.input, cmd = m.input.input.Update(msg)
+				return m, cmd
 			}
 
-		case "down", "j":
-			if m.cursor < len(m.files)-1 {
-				m.cursor++
-			}
-		case "b", "left", "h":
-			if m.checked != 0 {
-				return m.Back(), nil
-			}
-		case "enter", " ", "right", "l":
-			return m.Forward(), nil
 		}
 
 	}
-	var cmd tea.Cmd
-	m.txtin, cmd = m.txtin.Update(msg)
 	return m, cmd
 }
 func (m Model) View() string {
@@ -101,27 +122,28 @@ func (m Model) View() string {
 			Bold(true).
 			Background(lipgloss.Color("#5f5fff")).
 			Render("CVKeeper"))
+	if !m.isInput {
+		s += render(strings.Join(m.history, "/"), historyFormat, historyStyle)
+		for i, item := range m.files {
 
-	s += render(strings.Join(m.history, "/"), historyFormat, historyStyle)
-	for i, item := range m.files {
+			cursor := emptyCursor
+			colored := false
+			if m.cursor == i {
+				cursor = filledCursor
+				colored = true
+			}
 
-		cursor := emptyCursor
-		colored := false
-		if m.cursor == i {
-			cursor = filledCursor
-			colored = true
+			// Render the row
+
+			s += showItem(fmt.Sprintf(menuFormat, cursor, item.Filename), colored)
+
 		}
-
-		// Render the row
-
-		s += showItem(fmt.Sprintf(menuFormat, cursor, item.Filename), colored)
-
+	} else {
+		s += m.input.input.View()
 	}
-	s += m.txtin.View()
-	s += "\nPress n to add one-string, N to add multiple-string\n"
+	s += "\nPress n to add one-string, N to add multiple-string\nPress f to create folder"
 	// The footer
 	s += "\nPress q to quit.\n"
-
 	// Send the UI for rendering
 	return s
 }
@@ -137,6 +159,13 @@ func showItem(txt string, colored bool) string {
 func render(txt, format string, style lipgloss.Style) string {
 	return strings.TrimSpace(style.Render(fmt.Sprintf(format, txt)))
 }
+func (m Model) SetInput() Model {
+	t := textinput.New()
+	t.Placeholder = "filename"
+	t.Focus()
+	m.input.input = t
+	return m
+}
 func (m Model) Back() Model {
 	if len(m.path) > 1 {
 		files := m.repo.GetFilesByParentId(m.path[len(m.path)-2])
@@ -148,10 +177,13 @@ func (m Model) Back() Model {
 	return m
 }
 func (m Model) Forward() Model {
-	files := m.repo.GetFilesByParentId(m.files[m.cursor].Id)
-	m.path = append(m.path, m.files[m.cursor].Id)
-	m.history = append(m.history, m.files[m.cursor].Filename)
-	m.files = files
-	m.cursor = 0
+	if len(m.files) != 0 {
+		files := m.repo.GetFilesByParentId(m.files[m.cursor].Id)
+
+		m.path = append(m.path, m.files[m.cursor].Id)
+		m.history = append(m.history, m.files[m.cursor].Filename)
+		m.files = files
+		m.cursor = 0
+	}
 	return m
 }
