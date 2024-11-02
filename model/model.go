@@ -11,11 +11,17 @@ import (
 	"strings"
 )
 
+type CreatingState int
+
 const (
 	emptyCursor   = "  "
 	filledCursor  = "->"
 	menuFormat    = " %s %s\n"
 	historyFormat = "\n%s\n\n"
+
+	UsualState           CreatingState = 0
+	WaitFilenameState    CreatingState = 1
+	WaitFileContentState CreatingState = 2
 )
 
 var (
@@ -28,16 +34,28 @@ type Input struct {
 	area  textarea.Model
 }
 type Model struct {
-	repo    repo.Repository
-	files   []repo.File
-	cursor  int
-	checked int
-	path    []int
-	history []string
-	input   Input
-	isInput bool
+	repo            repo.Repository
+	files           []repo.File
+	cursor          int
+	checked         int
+	path            []int
+	history         []string
+	input           Input
+	CreatingStateId CreatingState
 }
 
+func (m Model) NextState() {
+	if m.CreatingStateId == UsualState {
+		m.CreatingStateId = WaitFilenameState
+	} else if m.CreatingStateId == WaitFilenameState {
+		m.CreatingStateId = WaitFileContentState
+	} else {
+		m.CreatingStateId = UsualState
+	}
+}
+func (m Model) GetCurrentFolderId() int {
+	return m.path[len(m.path)-1]
+}
 func InitModel(r repo.Repository) Model {
 	files := r.GetRoot()
 
@@ -67,7 +85,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 
-		if !m.isInput {
+		if m.CreatingStateId == UsualState {
 			switch msg.String() {
 			case "ctrl+c", "q":
 				return m, tea.Quit
@@ -88,18 +106,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m.Back(), cmd
 				}
 			case "n":
-				m.isInput = true
-				return m.SetInput(), cmd
+				m.CreatingStateId = WaitFilenameState
+				return m.SetInput("filename"), cmd
 			case "enter", " ", "right", "l":
 				return m.Forward(), cmd
 			}
-		} else {
+		} else if m.CreatingStateId == WaitFilenameState {
 
 			switch msg.String() {
 
 			case "enter":
-				m.isInput = false
-				return m, nil
+				if err := m.repo.Save(m.input.input.Value(), "test", m.GetCurrentFolderId()); err != nil {
+					return m, tea.Quit
+				}
+				m.CreatingStateId = UsualState
+				m.files = m.repo.GetFilesByParentId(m.GetCurrentFolderId())
+				return m, cmd
 			default:
 				m.input.input, cmd = m.input.input.Update(msg)
 				return m, cmd
@@ -122,7 +144,7 @@ func (m Model) View() string {
 			Bold(true).
 			Background(lipgloss.Color("#5f5fff")).
 			Render("CVKeeper"))
-	if !m.isInput {
+	if m.CreatingStateId == UsualState {
 		s += render(strings.Join(m.history, "/"), historyFormat, historyStyle)
 		for i, item := range m.files {
 
@@ -159,9 +181,9 @@ func showItem(txt string, colored bool) string {
 func render(txt, format string, style lipgloss.Style) string {
 	return strings.TrimSpace(style.Render(fmt.Sprintf(format, txt)))
 }
-func (m Model) SetInput() Model {
+func (m Model) SetInput(placeholder string) Model {
 	t := textinput.New()
-	t.Placeholder = "filename"
+	t.Placeholder = placeholder
 	t.Focus()
 	m.input.input = t
 	return m

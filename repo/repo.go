@@ -4,7 +4,7 @@ import "database/sql"
 import _ "github.com/mattn/go-sqlite3"
 
 type Repository interface {
-	Save(path, filename, data string) error
+	Save(filename, data string, parentId int) error
 	GetFilesByParentId(id int) []File
 	GetRoot() []File
 }
@@ -12,8 +12,13 @@ type repository struct {
 	db *sql.DB
 }
 
-func (r repository) Save(path, filename, data string) error {
-	return nil
+func (r repository) Save(filename, data string, parentId int) error {
+	var id int
+	if err := r.db.QueryRow("insert into files (filename, is_folder, parent_id) values ($1,$2,$3) returning id", filename, false, parentId).Scan(&id); err != nil {
+		return err
+	}
+	_, err := r.db.Exec("insert into cipher_data (cipher_data, files_id) values ($1,$2)", data, id)
+	return err
 }
 func (r repository) GetRoot() []File {
 	row, _ := r.db.Query("select id, filename, is_folder from files where parent_id=-1")
