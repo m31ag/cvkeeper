@@ -4,43 +4,58 @@ import "database/sql"
 import _ "github.com/mattn/go-sqlite3"
 
 type Repository interface {
-	Save(filename, data string, parentId int) error
+	SaveFileWithContent(filename, data string, parentId int) error
+	SaveDir(dirName string, parentId int) error
 	GetFilesByParentId(id int) []File
+	GetFileContentByFileId(id int) (string, error)
 	GetRoot() []File
 }
 type repository struct {
 	db *sql.DB
 }
 
-func (r repository) Save(filename, data string, parentId int) error {
+func (r repository) SaveDir(dirName string, parentId int) error {
+	_, err := r.db.Exec("insert into files (filename, is_folder, parent_id) values ($1,true,$3)", dirName, parentId)
+	return err
+}
+
+func (r repository) SaveFileWithContent(filename, data string, parentId int) error {
 	var id int
-	if err := r.db.QueryRow("insert into files (filename, is_folder, parent_id) values ($1,$2,$3) returning id", filename, false, parentId).Scan(&id); err != nil {
+	if err := r.db.QueryRow("insert into files (filename, is_folder, parent_id) values ($1,false,$2) returning id", filename, parentId).Scan(&id); err != nil {
 		return err
 	}
 	_, err := r.db.Exec("insert into cipher_data (cipher_data, files_id) values ($1,$2)", data, id)
 	return err
 }
 func (r repository) GetRoot() []File {
-	row, _ := r.db.Query("select id, filename, is_folder from files where parent_id=-1")
+	row, _ := r.db.Query("select id, filename, is_folder, parent_id from files where parent_id=-1")
 	defer row.Close()
 	var files []File
 
 	for row.Next() {
 		f := File{}
-		_ = row.Scan(&f.Id, &f.Filename, &f.IsFolder)
+		_ = row.Scan(&f.Id, &f.Filename, &f.IsFolder, &f.ParentId)
 		files = append(files, f)
 
 	}
 	return files
 }
+func (r repository) GetFileContentByFileId(id int) (string, error) {
+	var res string
+	if err := r.db.QueryRow("select cipher_data from cipher_data where files_id = $1", id).Scan(&res); err != nil {
+		return "", err
+	}
+	return res, nil
+
+}
 func (r repository) GetFilesByParentId(id int) []File {
-	row, _ := r.db.Query("select id, filename, is_folder from files where parent_id = $2", id, id)
+	row, _ := r.db.Query("select id, filename, is_folder,parent_id from files where parent_id = $2", id, id)
 	defer row.Close()
 	var files []File
 
 	for row.Next() {
 		f := File{}
-		_ = row.Scan(&f.Id, &f.Filename, &f.IsFolder)
+		_ = row.Scan(&f.Id, &f.Filename, &f.IsFolder, &f.ParentId)
 		files = append(files, f)
 
 	}
