@@ -4,26 +4,28 @@ import (
 	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-
 	"github.com/charmbracelet/lipgloss"
 	"github.com/m31ag/cvkeeper/repo"
 	"strings"
 )
 
-type InputState int
+type ViewState int
 
 const (
-	defaultRootId int = 0
+	defaultRootId     int = 0
+	defaultFirstDirId     = -2
 
 	emptyCursor   = "  "
 	filledCursor  = "->"
 	menuFormat    = "%s %s %s\n"
 	historyFormat = "\n%s\n\n"
 
-	StandardState        InputState = 0
-	WaitFilenameState    InputState = 1
-	WaitDirnameState                = 2
-	WaitFileContentState InputState = 3
+	StandardState        ViewState = 0
+	WaitFilenameState    ViewState = 1
+	WaitDirnameState               = 2
+	WaitFileContentState ViewState = 3
+	ShowFileContentState ViewState = 4
+	DeleteState          ViewState = 5
 )
 
 var (
@@ -32,9 +34,8 @@ var (
 )
 
 type Input struct {
-	input        textinput.Model
-	inputValue   string
-	InputStateId InputState
+	input textinput.Model
+	value string
 }
 
 type Model struct {
@@ -44,6 +45,7 @@ type Model struct {
 	order       []repo.File
 	history     []string
 	input       Input
+	StateId     ViewState
 	fileContent string
 }
 
@@ -58,15 +60,7 @@ func (m Model) GetChecked() repo.File {
 		IsFolder: true,
 	}
 }
-func (i *Input) NextState() {
-	if i.InputStateId == StandardState {
-		i.InputStateId = WaitFilenameState
-	} else if i.InputStateId == WaitFilenameState {
-		i.InputStateId = WaitFileContentState
-	} else if i.InputStateId == WaitDirnameState || i.InputStateId == WaitFileContentState {
-		i.InputStateId = StandardState
-	}
-}
+
 func (m Model) GetCurrentOrderId() int {
 	return m.order[len(m.order)-1].Id
 }
@@ -95,93 +89,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 
-		if m.input.InputStateId == StandardState {
-			switch msg.String() {
-			case "ctrl+c", "q":
-				return m, tea.Quit
-			case "up", "k":
-				if m.cursor > 0 {
-					m.cursor--
-					return m, cmd
-				}
-			case "down", "j":
-				if m.cursor < len(m.files)-1 {
-					m.cursor++
-					return m, cmd
-				}
-			case "b", "left", "h":
-				if len(m.order) > 1 {
-					return m.Back(), cmd
-				}
-			case "f":
-				if m.order[len(m.order)-1].IsFolder {
-					m.input.InputStateId = WaitDirnameState
-					return m.SetInput("dirname"), cmd
-				}
-			case "n":
-				if m.order[len(m.order)-1].IsFolder {
-					m.input.InputStateId = WaitFilenameState
-					return m.SetInput("filename"), cmd
-				}
-			case "enter", " ", "right", "l":
-				if m.GetChecked().IsFolder {
-					return m.Forward(), cmd
-				} else {
-					c, err := m.repo.GetFileContentByFileId(m.GetChecked().Id)
-					if err != nil {
-						println(err.Error())
-						return m, tea.Quit
-					}
-					m.fileContent = c
-					return m, cmd
-				}
-			}
-		} else if m.input.InputStateId == WaitFilenameState {
-
-			switch msg.String() {
-
-			case "enter":
-
-				m.input.NextState()
-				m.input.inputValue = m.input.input.Value()
-				return m.SetInput("content"), cmd
-			default:
-				m.input.input, cmd = m.input.input.Update(msg)
-				return m, cmd
-			}
-
-		} else if m.input.InputStateId == WaitFileContentState {
-
-			switch msg.String() {
-			case "enter":
-				if err := m.repo.SaveFileWithContent(m.input.inputValue, m.input.input.Value(), m.GetCurrentOrderId()); err != nil {
-					return m, tea.Quit
-				}
-				m.input.NextState()
-				m.files = m.repo.GetFilesByParentId(m.GetCurrentOrderId())
-				m.input.inputValue = ""
-				return m, cmd
-			default:
-				m.input.input, cmd = m.input.input.Update(msg)
-				return m, cmd
-			}
-
-		} else if m.input.InputStateId == WaitDirnameState {
-			switch msg.String() {
-			case "enter":
-				if err := m.repo.SaveDir(m.input.input.Value(), m.GetCurrentOrderId()); err != nil {
-					println(err.Error())
-					return m, tea.Quit
-				}
-				m.input.InputStateId = StandardState
-				m.files = m.repo.GetFilesByParentId(m.GetCurrentOrderId())
-				return m, cmd
-			default:
-				m.input.input, cmd = m.input.input.Update(msg)
-				return m, cmd
-
-			}
-
+		if m.StateId == StandardState {
+			return m.OnStandard(msg)
+		} else if m.StateId == WaitFilenameState {
+			return m.OnWaitFilename(msg)
+		} else if m.StateId == WaitFileContentState {
+			return m.OnWaitFileContent(msg)
+		} else if m.StateId == WaitDirnameState {
+			return m.OnWaitDirName(msg)
+		} else if m.StateId == ShowFileContentState {
+			return m.OnShowFileContent(msg)
 		}
 
 	}
@@ -203,7 +120,7 @@ func (m Model) View() string {
 
 	s += render(strings.Join(m.history, "/"), historyFormat, historyStyle)
 	//content
-	if m.input.InputStateId == StandardState && len(m.fileContent) == 0 {
+	if m.StateId == StandardState {
 		for i, item := range m.files {
 
 			cursor := emptyCursor
@@ -221,7 +138,7 @@ func (m Model) View() string {
 			s += showItem(fmt.Sprintf(menuFormat, suffix, cursor, item.Filename), colored)
 
 		}
-	} else if len(m.fileContent) > 0 {
+	} else if m.StateId == ShowFileContentState {
 		s += m.fileContent
 	} else {
 		s += m.input.input.View()
@@ -258,7 +175,7 @@ func (m Model) Back() Model {
 		if len(m.fileContent) > 0 {
 			files = m.repo.GetFilesByParentId(m.order[len(m.order)-1].Id)
 			m.fileContent = ""
-
+			m.StateId = StandardState
 		} else {
 			files = m.repo.GetFilesByParentId(m.order[len(m.order)-1].ParentId)
 			m.order = m.order[:len(m.order)-1]
@@ -271,10 +188,28 @@ func (m Model) Back() Model {
 	return m
 }
 func (m Model) Forward() Model {
-	files := m.repo.GetFilesByParentId(m.files[m.cursor].Id)
-	m.order = append(m.order, m.files[m.cursor])
-	m.history = append(m.history, m.files[m.cursor].Filename)
-	m.files = files
-	m.cursor = 0
+	//if m.GetChecked().Id != 0 {
+	//	m.Back()
+	//} else {
+	if m.GetChecked().Id != 0 {
+		files := m.repo.GetFilesByParentId(m.files[m.cursor].Id)
+		//var back repo.File
+		//if len(m.order) > 0 {
+		//	back = repo.File{
+		//		Id:       defaultFirstDirId,
+		//		ParentId: m.order[len(m.order)-1].Id,
+		//		Filename: "..",
+		//		IsFolder: true,
+		//	}
+		//}
+		m.order = append(m.order, m.files[m.cursor])
+		m.history = append(m.history, m.files[m.cursor].Filename)
+		m.files = files
+		//if back.Id == defaultFirstDirId {
+		//files = slices.Insert(m.files, 0, back)
+		//}
+		m.cursor = 0
+	}
 	return m
+
 }

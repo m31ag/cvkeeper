@@ -49,7 +49,7 @@ func (r repository) GetFileContentByFileId(id int) (string, error) {
 
 }
 func (r repository) GetFilesByParentId(id int) []File {
-	row, _ := r.db.Query("select id, filename, is_folder,parent_id from files where parent_id = $2", id, id)
+	row, _ := r.db.Query("select id, filename, is_folder,parent_id from files where parent_id = $1", id)
 	defer row.Close()
 	var files []File
 
@@ -59,6 +59,7 @@ func (r repository) GetFilesByParentId(id int) []File {
 		files = append(files, f)
 
 	}
+
 	return files
 }
 func NewRepo() Repository {
