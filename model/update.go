@@ -9,6 +9,9 @@ func (m Model) OnStandard(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 
 		switch msg.String() {
+		case "delete":
+			m.StateId = DeleteState
+			return m, cmd
 		case "ctrl+c", "q":
 			return m, tea.Quit
 		case "up", "k":
@@ -124,5 +127,9 @@ func (m Model) OnShowFileContent(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 	}
+	return m, cmd
+}
+func (m Model) OnDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
 	return m, cmd
 }

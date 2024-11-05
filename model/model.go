@@ -22,7 +22,7 @@ const (
 
 	StandardState        ViewState = 0
 	WaitFilenameState    ViewState = 1
-	WaitDirnameState               = 2
+	WaitDirnameState     ViewState = 2
 	WaitFileContentState ViewState = 3
 	ShowFileContentState ViewState = 4
 	DeleteState          ViewState = 5
@@ -183,32 +183,29 @@ func (m Model) Back() Model {
 		}
 
 		m.files = files
-		m.cursor = 0
+		if len(files) > 0 && files[0].Id == defaultFirstDirId {
+			m.cursor = 1
+		} else {
+			m.cursor = 0
+		}
 	}
 	return m
 }
 func (m Model) Forward() Model {
-	//if m.GetChecked().Id != 0 {
-	//	m.Back()
-	//} else {
-	if m.GetChecked().Id != 0 {
+
+	if m.GetChecked().Id != defaultFirstDirId {
 		files := m.repo.GetFilesByParentId(m.files[m.cursor].Id)
-		//var back repo.File
-		//if len(m.order) > 0 {
-		//	back = repo.File{
-		//		Id:       defaultFirstDirId,
-		//		ParentId: m.order[len(m.order)-1].Id,
-		//		Filename: "..",
-		//		IsFolder: true,
-		//	}
-		//}
+
 		m.order = append(m.order, m.files[m.cursor])
 		m.history = append(m.history, m.files[m.cursor].Filename)
 		m.files = files
-		//if back.Id == defaultFirstDirId {
-		//files = slices.Insert(m.files, 0, back)
-		//}
-		m.cursor = 0
+		if len(files) > 1 && files[0].Id == defaultFirstDirId {
+			m.cursor = 1
+		} else {
+			m.cursor = 0
+		}
+	} else {
+		return m.Back()
 	}
 	return m
 
