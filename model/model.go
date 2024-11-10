@@ -12,6 +12,9 @@ import (
 type ViewState int
 
 const (
+	purpleColor = "#CE6797"
+	whiteColor  = "#FFFFFF"
+
 	defaultRootId     int = 0
 	defaultFirstDirId     = -2
 
@@ -29,8 +32,8 @@ const (
 )
 
 var (
-	style        = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#CE6797"))
-	historyStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("#FFFFFF"))
+	style        = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(purpleColor))
+	historyStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(whiteColor))
 )
 
 type Input struct {
@@ -99,6 +102,8 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.OnWaitDirName(msg)
 		} else if m.StateId == ShowFileContentState {
 			return m.OnShowFileContent(msg)
+		} else if m.StateId == DeleteState {
+			return m.OnDelete(msg)
 		}
 
 	}
@@ -140,12 +145,18 @@ func (m Model) View() string {
 		}
 	} else if m.StateId == ShowFileContentState {
 		s += m.fileContent
+	} else if m.StateId == DeleteState {
+		s += fmt.Sprintf("%s - delete %s, %s - cancel deleting\n", styleAndRender("'y'", true, purpleColor), m.files[m.cursor].Filename, styleAndRender("'n'", true, purpleColor))
 	} else {
 		s += m.input.input.View()
 	}
-	s += "\nPress n to add one-string, N to add multiple-string\nPress f to create folder"
+	s += fmt.Sprintf("\nPress %s to add one-string, %s to add multiple-string\nPress %s to create folder",
+		styleAndRender("'n'", true, purpleColor),
+		styleAndRender("'N'", true, purpleColor),
+		styleAndRender("'f'", true, purpleColor),
+	)
 	// The footer
-	s += "\nPress q to quit.\n"
+	s += fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, purpleColor))
 	// Send the UI for rendering
 	return s
 }
@@ -158,6 +169,14 @@ func showItem(txt string, colored bool) string {
 		return txt
 	}
 
+}
+func styleAndRender(t string, bold bool, color string) string {
+	if len(color) == 0 {
+		color = whiteColor
+	}
+	s := lipgloss.NewStyle().Bold(bold).Foreground(lipgloss.Color(color))
+
+	return strings.TrimSpace(s.Render(t))
 }
 func render(txt, format string, style lipgloss.Style) string {
 	return strings.TrimSpace(style.Render(fmt.Sprintf(format, txt)))

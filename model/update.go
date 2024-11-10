@@ -10,7 +10,10 @@ func (m Model) OnStandard(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		switch msg.String() {
 		case "delete":
-			m.StateId = DeleteState
+			if len(m.files) > 0 && m.GetChecked().Id != defaultFirstDirId {
+
+				m.StateId = DeleteState
+			}
 			return m, cmd
 		case "ctrl+c", "q":
 			return m, tea.Quit
@@ -131,5 +134,20 @@ func (m Model) OnShowFileContent(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 func (m Model) OnDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+
+		case "y":
+			println(m.files[m.cursor].Filename)
+			//delete file or folder
+			m.files = m.repo.GetFilesByParentId(m.GetCurrentOrderId())
+			m.StateId = StandardState
+			return m, cmd
+		case "n":
+			m.StateId = StandardState
+			return m, cmd
+		}
+	}
 	return m, cmd
 }
