@@ -1,12 +1,10 @@
 package model
 
 import (
-	"fmt"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/m31ag/cvkeeper/repo"
-	"strings"
 )
 
 type ViewState int
@@ -93,94 +91,36 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 
 		if m.StateId == StandardState {
-			return m.OnStandard(msg)
+			return m.OnStandardUpdate(msg)
 		} else if m.StateId == WaitFilenameState {
-			return m.OnWaitFilename(msg)
+			return m.OnWaitFilenameUpdate(msg)
 		} else if m.StateId == WaitFileContentState {
-			return m.OnWaitFileContent(msg)
+			return m.OnWaitFileContentUpdate(msg)
 		} else if m.StateId == WaitDirnameState {
-			return m.OnWaitDirName(msg)
+			return m.OnWaitDirNameUpdate(msg)
 		} else if m.StateId == ShowFileContentState {
-			return m.OnShowFileContent(msg)
+			return m.OnShowFileContentUpdate(msg)
 		} else if m.StateId == DeleteState {
-			return m.OnDelete(msg)
+			return m.OnDeleteUpdate(msg)
 		}
 
 	}
 	return m, cmd
 }
 func (m Model) View() string {
-	//header
-	s := fmt.Sprintf(
-		"%s\n\n",
-		lipgloss.
-			NewStyle().
-			MarginLeft(20).
-			PaddingLeft(10).
-			PaddingRight(10).
-			AlignHorizontal(lipgloss.Center).
-			Bold(true).
-			Background(lipgloss.Color("#5f5fff")).
-			Render("CVKeeper"))
 
-	s += render(strings.Join(m.history, "/"), historyFormat, historyStyle)
-	//content
 	if m.StateId == StandardState {
-		for i, item := range m.files {
-
-			cursor := emptyCursor
-			colored := false
-			if m.cursor == i {
-				cursor = filledCursor
-				colored = true
-			}
-
-			// Render the row
-			suffix := "\U0001F4C4"
-			if item.IsFolder {
-				suffix = "\U0001F4C1"
-			}
-			s += showItem(fmt.Sprintf(menuFormat, suffix, cursor, item.Filename), colored)
-
-		}
+		return m.OnStandardView()
 	} else if m.StateId == ShowFileContentState {
-		s += m.fileContent
+		return m.OnShowFileContentView()
 	} else if m.StateId == DeleteState {
-		s += fmt.Sprintf("%s - delete %s, %s - cancel deleting\n", styleAndRender("'y'", true, purpleColor), m.files[m.cursor].Filename, styleAndRender("'n'", true, purpleColor))
+		return m.OnDeleteView()
 	} else {
-		s += m.input.input.View()
-	}
-	s += fmt.Sprintf("\nPress %s to add one-string, %s to add multiple-string\nPress %s to create folder",
-		styleAndRender("'n'", true, purpleColor),
-		styleAndRender("'N'", true, purpleColor),
-		styleAndRender("'f'", true, purpleColor),
-	)
-	// The footer
-	s += fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, purpleColor))
-	// Send the UI for rendering
-	return s
-}
-
-func showItem(txt string, colored bool) string {
-
-	if colored {
-		return strings.TrimSpace(style.Render(txt))
-	} else {
-		return txt
+		return m.DefaultContentView()
 	}
 
 }
-func styleAndRender(t string, bold bool, color string) string {
-	if len(color) == 0 {
-		color = whiteColor
-	}
-	s := lipgloss.NewStyle().Bold(bold).Foreground(lipgloss.Color(color))
 
-	return strings.TrimSpace(s.Render(t))
-}
-func render(txt, format string, style lipgloss.Style) string {
-	return strings.TrimSpace(style.Render(fmt.Sprintf(format, txt)))
-}
 func (m Model) SetInput(placeholder string) Model {
 	t := textinput.New()
 	t.Placeholder = placeholder

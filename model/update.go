@@ -2,7 +2,7 @@ package model
 
 import tea "github.com/charmbracelet/bubbletea"
 
-func (m Model) OnStandard(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
@@ -58,7 +58,7 @@ func (m Model) OnStandard(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return m, cmd
 }
-func (m Model) OnWaitFilename(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) OnWaitFilenameUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -77,7 +77,7 @@ func (m Model) OnWaitFilename(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 
-func (m Model) OnWaitFileContent(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) OnWaitFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -97,7 +97,7 @@ func (m Model) OnWaitFileContent(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return m, cmd
 }
-func (m Model) OnWaitDirName(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) OnWaitDirNameUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -118,7 +118,7 @@ func (m Model) OnWaitDirName(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return m, cmd
 }
-func (m Model) OnShowFileContent(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) OnShowFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -132,7 +132,7 @@ func (m Model) OnShowFileContent(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 	return m, cmd
 }
-func (m Model) OnDelete(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m Model) OnDeleteUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
