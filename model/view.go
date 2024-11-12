@@ -60,7 +60,8 @@ func (m Model) OnStandardView() string {
 func (m Model) OnShowFileContentView() string {
 	return fmt.Sprint(
 		m.defaultHeader(),
-		m.fileContent,
+		styleAndRender(m.fileContent, true, whiteColor),
+		"\n",
 		m.defaultFooter(true),
 	)
 }
@@ -69,7 +70,11 @@ func (m Model) OnDeleteView() string {
 		m.defaultHeader(),
 		styleAndRender(strings.Repeat("#", 40)+"\n", true, whiteColor),
 
-		fmt.Sprintf("%s - delete %s, %s - cancel deleting\n", styleAndRender("'y'", true, purpleColor), m.files[m.cursor].Filename, styleAndRender("'n'", true, purpleColor)),
+		fmt.Sprintf(
+			"%s - delete %s, %s - cancel deleting\n",
+			styleAndRender("'y'", true, purpleColor),
+			m.files[m.cursor].Filename,
+			styleAndRender("'n'", true, purpleColor)),
 
 		styleAndRender(strings.Repeat("#", 40)+"\n", true, whiteColor),
 

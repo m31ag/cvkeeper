@@ -139,8 +139,7 @@ func (m Model) OnDeleteUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 
 		case "y":
-			println(m.files[m.cursor].Filename)
-			//delete file or folder
+			m.repo.DeleteFolders(m.GetChecked().Id)
 			m.files = m.repo.GetFilesByParentId(m.GetCurrentOrderId())
 			m.StateId = StandardState
 			return m, cmd

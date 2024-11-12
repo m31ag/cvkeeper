@@ -9,9 +9,72 @@ type Repository interface {
 	GetFilesByParentId(id int) []File
 	GetFileContentByFileId(id int) (string, error)
 	GetRoot() []File
+	DeleteFolders(parentId int)
 }
 type repository struct {
 	db *sql.DB
+}
+
+func (r repository) DeleteFolders(parentId int) {
+	selectQuery := `
+		WITH RECURSIVE file_hierarchy AS (
+			SELECT
+				id,
+				filename,
+				is_folder,
+				parent_id,
+				0 AS depth
+			FROM files
+			WHERE id = $1
+
+			UNION ALL
+
+			SELECT
+				f.id,
+				f.filename,
+				f.is_folder,
+				f.parent_id,
+				fh.depth + 1 AS depth
+			FROM files f
+				INNER JOIN file_hierarchy fh ON f.parent_id = fh.id
+		)
+		SELECT id,  is_folder
+		FROM file_hierarchy
+		ORDER BY depth DESC, is_folder;
+`
+	rows, err := r.db.Query(selectQuery, parentId)
+	if err != nil {
+		println(err.Error())
+		return
+	}
+	defer rows.Close()
+	order := make([]deleteDto, 0)
+	for rows.Next() {
+		var i int
+		var isFolder bool
+		if err = rows.Scan(&i, &isFolder); err != nil {
+			println(err.Error())
+			return
+		}
+		order = append(order, deleteDto{
+			Id:       i,
+			IsFolder: isFolder,
+		})
+	}
+	for _, dto := range order {
+		_, err = r.db.Exec("DELETE FROM files WHERE id = $1", dto.Id)
+		if err != nil {
+			println(err.Error())
+			return
+		}
+		if dto.IsFolder {
+			_, err = r.db.Exec("DELETE FROM cipher_data WHERE files_id = $1", dto.Id)
+			if err != nil {
+				println(err.Error())
+				return
+			}
+		}
+	}
 }
 
 func (r repository) SaveDir(dirName string, parentId int) error {
@@ -42,7 +105,13 @@ func (r repository) GetRoot() []File {
 }
 func (r repository) GetFileContentByFileId(id int) (string, error) {
 	var res string
-	if err := r.db.QueryRow("select cipher_data from cipher_data where files_id = $1", id).Scan(&res); err != nil {
+	query := `
+			select filename || ': ' || cipher_data
+			from cipher_data cd
+					 inner join files f on cd.files_id = f.id
+			where files_id = $1
+`
+	if err := r.db.QueryRow(query, id).Scan(&res); err != nil {
 		return "", err
 	}
 	return res, nil

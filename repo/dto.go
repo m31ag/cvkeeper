@@ -12,3 +12,7 @@ type CipherData struct {
 	CipherData string
 	FilesId    int
 }
+type deleteDto struct {
+	Id       int
+	IsFolder bool
+}
