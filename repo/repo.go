@@ -7,7 +7,7 @@ type Repository interface {
 	SaveFileWithContent(filename, data string, parentId int) error
 	SaveDir(dirName string, parentId int) error
 	GetFilesByParentId(id int) []File
-	GetFileContentByFileId(id int) (string, error)
+	GetFileContentByFileId(id int) (Content, error)
 	GetRoot() []File
 	DeleteFolders(parentId int)
 }
@@ -103,16 +103,16 @@ func (r repository) GetRoot() []File {
 	}
 	return files
 }
-func (r repository) GetFileContentByFileId(id int) (string, error) {
-	var res string
+func (r repository) GetFileContentByFileId(id int) (Content, error) {
 	query := `
-			select filename || ': ' || cipher_data
+			select filename, cipher_data
 			from cipher_data cd
 					 inner join files f on cd.files_id = f.id
 			where files_id = $1
 `
-	if err := r.db.QueryRow(query, id).Scan(&res); err != nil {
-		return "", err
+	var res Content
+	if err := r.db.QueryRow(query, id).Scan(&res.Filename, &res.FileContent); err != nil {
+		return res, err
 	}
 	return res, nil
 

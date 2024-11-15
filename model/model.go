@@ -63,7 +63,10 @@ func (m Model) GetChecked() repo.File {
 }
 
 func (m Model) GetCurrentOrderId() int {
-	return m.order[len(m.order)-1].Id
+	return m.GetCurrentOrder().Id
+}
+func (m Model) GetCurrentOrder() repo.File {
+	return m.order[len(m.order)-1]
 }
 func InitModel(r repo.Repository) Model {
 	files := r.GetRoot()
@@ -128,6 +131,14 @@ func (m Model) SetInput(placeholder string) Model {
 	m.input.input = t
 	return m
 }
+func (m Model) SetDefaultCursor() Model {
+	if len(m.files) > 1 && m.files[0].Id == defaultFirstDirId {
+		m.cursor = 1
+	} else {
+		m.cursor = 0
+	}
+	return m
+}
 func (m Model) Back() Model {
 	if len(m.order) > 0 {
 		var files []repo.File
@@ -142,11 +153,7 @@ func (m Model) Back() Model {
 		}
 
 		m.files = files
-		if len(files) > 0 && files[0].Id == defaultFirstDirId {
-			m.cursor = 1
-		} else {
-			m.cursor = 0
-		}
+		return m.SetDefaultCursor()
 	}
 	return m
 }

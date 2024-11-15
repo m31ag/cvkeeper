@@ -62,7 +62,7 @@ func (m Model) OnShowFileContentView() string {
 		m.defaultHeader(),
 		styleAndRender(m.fileContent, true, whiteColor),
 		"\n",
-		m.defaultFooter(true),
+		m.defaultFooter(false),
 	)
 }
 func (m Model) OnDeleteView() string {

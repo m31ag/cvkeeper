@@ -1,6 +1,9 @@
 package model
 
-import tea "github.com/charmbracelet/bubbletea"
+import (
+	"github.com/atotto/clipboard"
+	tea "github.com/charmbracelet/bubbletea"
+)
 
 func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 
@@ -11,7 +14,6 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "delete":
 			if len(m.files) > 0 && m.GetChecked().Id != defaultFirstDirId {
-
 				m.StateId = DeleteState
 			}
 			return m, cmd
@@ -32,14 +34,23 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m.Back(), cmd
 			}
 		case "f":
-			if m.order[len(m.order)-1].IsFolder {
+			if m.GetCurrentOrder().IsFolder {
 				m.StateId = WaitDirnameState
 				return m.SetInput("dirname"), cmd
 			}
 		case "n":
-			if m.order[len(m.order)-1].IsFolder {
+			if m.GetCurrentOrder().IsFolder {
 				m.StateId = WaitFilenameState
 				return m.SetInput("filename"), cmd
+			}
+		case "c":
+			if !m.GetChecked().IsFolder {
+				s, err := m.repo.GetFileContentByFileId(m.GetChecked().Id)
+				if err != nil {
+					println(err.Error())
+				}
+				_ = clipboard.WriteAll(s.FileContent)
+
 			}
 		case "enter", " ", "right", "l":
 			if m.GetChecked().IsFolder {
@@ -51,7 +62,7 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Quit
 				}
 				m.StateId = ShowFileContentState
-				m.fileContent = c
+				m.fileContent = c.Viewed()
 				return m, cmd
 			}
 		}
@@ -128,6 +139,9 @@ func (m Model) OnShowFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(m.order) > 1 {
 				return m.Back(), cmd
 			}
+		//TODO(fix duplicates)
+		case "ctrl+c", "q":
+			return m, tea.Quit
 		}
 	}
 	return m, cmd
@@ -142,7 +156,7 @@ func (m Model) OnDeleteUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.repo.DeleteFolders(m.GetChecked().Id)
 			m.files = m.repo.GetFilesByParentId(m.GetCurrentOrderId())
 			m.StateId = StandardState
-			return m, cmd
+			return m.SetDefaultCursor(), cmd
 		case "n":
 			m.StateId = StandardState
 			return m, cmd
