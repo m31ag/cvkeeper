@@ -25,10 +25,11 @@ func (m Model) defaultHeader() string {
 func (m Model) defaultFooter(showHints bool) string {
 	s := ""
 	if showHints {
-		s += fmt.Sprintf("\nPress %s to add one-string, %s to add multiple-string\nPress %s to create folder",
+		s += fmt.Sprintf("\nPress %s to add one-string, %s to add multiple-string\nPress %s to create folder\nPress %s to copy file content\n",
 			styleAndRender("'n'", true, purpleColor),
 			styleAndRender("'N'", true, purpleColor),
 			styleAndRender("'f'", true, purpleColor),
+			styleAndRender("'c'", true, purpleColor),
 		)
 	}
 	return fmt.Sprint(
@@ -60,6 +61,7 @@ func (m Model) OnStandardView() string {
 func (m Model) OnShowFileContentView() string {
 	return fmt.Sprint(
 		m.defaultHeader(),
+		"\n",
 		styleAndRender(m.fileContent, true, whiteColor),
 		"\n",
 		m.defaultFooter(false),
