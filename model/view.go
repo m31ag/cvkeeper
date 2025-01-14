@@ -25,11 +25,15 @@ func (m Model) defaultHeader() string {
 func (m Model) defaultFooter(showHints bool) string {
 	s := ""
 	if showHints {
-		s += fmt.Sprintf("\nPress %s to add one-string, %s to add multiple-string\nPress %s to create folder\nPress %s to copy file content\n",
+		s += fmt.Sprintf("\nPress %s to add one-string, %s to add multiple-string\n"+
+			"Press %s to create folder\n"+
+			"Press %s to copy file content\n"+
+			"Press %s to delete file/folder\n",
 			styleAndRender("'n'", true, purpleColor),
 			styleAndRender("'N'", true, purpleColor),
 			styleAndRender("'f'", true, purpleColor),
 			styleAndRender("'c'", true, purpleColor),
+			styleAndRender("'d'", true, purpleColor),
 		)
 	}
 	return fmt.Sprint(

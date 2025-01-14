@@ -1,6 +1,7 @@
 package model
 
 import (
+	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -21,12 +22,14 @@ const (
 	menuFormat    = "%s %s %s\n"
 	historyFormat = "\n%s\n\n"
 
-	StandardState        ViewState = 0
-	WaitFilenameState    ViewState = 1
-	WaitDirnameState     ViewState = 2
-	WaitFileContentState ViewState = 3
-	ShowFileContentState ViewState = 4
-	DeleteState          ViewState = 5
+	StandardState                ViewState = 0
+	WaitFilenameState            ViewState = 1
+	WaitDirnameState             ViewState = 2
+	WaitFileContentState         ViewState = 3
+	ShowFileContentState         ViewState = 4
+	DeleteState                  ViewState = 5
+	WaitFilenameMultiStringState ViewState = 6
+	WaitMultipleFileContentState ViewState = 7
 )
 
 var (
@@ -38,7 +41,10 @@ type Input struct {
 	input textinput.Model
 	value string
 }
-
+type Area struct {
+	area  textarea.Model
+	value string
+}
 type Model struct {
 	repo        repo.Repository
 	files       []repo.File
@@ -46,6 +52,7 @@ type Model struct {
 	order       []repo.File
 	history     []string
 	input       Input
+	area        Area
 	StateId     ViewState
 	fileContent string
 }
@@ -129,6 +136,13 @@ func (m Model) SetInput(placeholder string) Model {
 	t.Placeholder = placeholder
 	t.Focus()
 	m.input.input = t
+	return m
+}
+func (m Model) SetArea(placeholder string) Model {
+	t := textarea.New()
+	t.Placeholder = placeholder
+	t.Focus()
+	m.area.area = t
 	return m
 }
 func (m Model) SetDefaultCursor() Model {
