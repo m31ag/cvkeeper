@@ -106,6 +106,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m.OnWaitFilenameUpdate(msg)
 		} else if m.StateId == WaitFileContentState {
 			return m.OnWaitFileContentUpdate(msg)
+		} else if m.StateId == WaitFilenameMultiStringState {
+			return m.OnWaitFilenameMultiStringUpdate(msg)
+		} else if m.StateId == WaitMultipleFileContentState {
+			return m.OnWaitMultipleFileContentUpdate(msg)
 		} else if m.StateId == WaitDirnameState {
 			return m.OnWaitDirNameUpdate(msg)
 		} else if m.StateId == ShowFileContentState {
@@ -118,15 +122,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 func (m Model) View() string {
-
-	if m.StateId == StandardState {
+	switch m.StateId {
+	case StandardState:
 		return m.OnStandardView()
-	} else if m.StateId == ShowFileContentState {
+	case ShowFileContentState:
 		return m.OnShowFileContentView()
-	} else if m.StateId == DeleteState {
+	case DeleteState:
 		return m.OnDeleteView()
-	} else {
-		return m.DefaultContentView()
+	case WaitFilenameState, WaitDirnameState, WaitFilenameMultiStringState, WaitFileContentState:
+		return m.DefaultInputView()
+	case WaitMultipleFileContentState:
+		return m.DefaultAreaView()
+	default:
+		return m.OnStandardView()
 	}
 
 }

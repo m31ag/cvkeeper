@@ -87,10 +87,18 @@ func (m Model) OnDeleteView() string {
 		m.defaultFooter(false),
 	)
 }
-func (m Model) DefaultContentView() string {
+func (m Model) DefaultInputView() string {
 	return fmt.Sprint(
 		m.defaultHeader(),
 		m.input.input.View(),
+		m.defaultFooter(true),
+	)
+
+}
+func (m Model) DefaultAreaView() string {
+	return fmt.Sprint(
+		m.defaultHeader(),
+		m.area.area.View(),
 		m.defaultFooter(true),
 	)
 

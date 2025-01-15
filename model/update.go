@@ -131,21 +131,27 @@ func (m Model) OnWaitFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 func (m Model) OnWaitMultipleFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+enter":
+		case "ctrl+]":
 			if err := m.repo.SaveFileWithContent(m.input.value, m.area.area.Value(), m.GetCurrentOrderId()); err != nil {
 				return m, tea.Quit
 			}
 			m.StateId = StandardState
 			m.files = m.repo.GetFilesByParentId(m.GetCurrentOrderId())
 			m.input.value = ""
+			m.area.value = ""
 			return m, cmd
 		case "ctrl+c":
 			return m, tea.Quit
 		default:
+			if !m.area.area.Focused() {
+				cmd = m.area.area.Focus()
+			}
+			cmds = append(cmds, cmd)
 			m.area.area, cmd = m.area.area.Update(msg)
 			return m, cmd
 		}
