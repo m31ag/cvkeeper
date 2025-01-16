@@ -67,7 +67,7 @@ func (r repository) DeleteFolders(parentId int) {
 			println(err.Error())
 			return
 		}
-		if dto.IsFolder {
+		if !dto.IsFolder {
 			_, err = r.db.Exec("DELETE FROM cipher_data WHERE files_id = $1", dto.Id)
 			if err != nil {
 				println(err.Error())

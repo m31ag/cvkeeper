@@ -41,6 +41,26 @@ func (m Model) defaultFooter(showHints bool) string {
 		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, purpleColor)),
 	)
 }
+func (m Model) inputFooter() string {
+	s := fmt.Sprintf("\nPress %s to cancel\n",
+		styleAndRender("ctrl+c'", true, purpleColor),
+	)
+	return fmt.Sprint(
+		s,
+		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, purpleColor)),
+	)
+}
+func (m Model) areaFooter() string {
+	s := fmt.Sprintf("\nPress %s to cancel\n"+
+		"Press %s to save\n",
+		styleAndRender("ctrl+c'", true, purpleColor),
+		styleAndRender("ctrl+]'", true, purpleColor),
+	)
+	return fmt.Sprint(
+		s,
+		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, purpleColor)),
+	)
+}
 func (m Model) OnStandardView() string {
 	list := ""
 	for i, item := range m.files {
@@ -91,7 +111,7 @@ func (m Model) DefaultInputView() string {
 	return fmt.Sprint(
 		m.defaultHeader(),
 		m.input.input.View(),
-		m.defaultFooter(true),
+		m.inputFooter(),
 	)
 
 }
@@ -99,7 +119,7 @@ func (m Model) DefaultAreaView() string {
 	return fmt.Sprint(
 		m.defaultHeader(),
 		m.area.area.View(),
-		m.defaultFooter(true),
+		m.areaFooter(),
 	)
 
 }

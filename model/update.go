@@ -81,10 +81,13 @@ func (m Model) OnWaitFilenameUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 
 		case "enter":
-
 			m.StateId = WaitFileContentState
 			m.input.value = m.input.input.Value()
 			return m.SetInput("content"), cmd
+		case "ctrl+c":
+			m.input.value = ""
+			m.StateId = StandardState
+			return m, cmd
 		default:
 			m.input.input, cmd = m.input.input.Update(msg)
 			return m, cmd
@@ -103,6 +106,10 @@ func (m Model) OnWaitFilenameMultiStringUpdate(msg tea.Msg) (tea.Model, tea.Cmd)
 			m.StateId = WaitMultipleFileContentState
 			m.input.value = m.input.input.Value()
 			return m.SetArea("content"), cmd
+		case "ctrl+c":
+			m.input.value = ""
+			m.StateId = StandardState
+			return m, cmd
 		default:
 			m.input.input, cmd = m.input.input.Update(msg)
 			return m, cmd
@@ -122,6 +129,10 @@ func (m Model) OnWaitFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.StateId = StandardState
 			m.files = m.repo.GetFilesByParentId(m.GetCurrentOrderId())
 			m.input.value = ""
+			return m, cmd
+		case "ctrl+c":
+			m.input.value = ""
+			m.StateId = StandardState
 			return m, cmd
 		default:
 			m.input.input, cmd = m.input.input.Update(msg)
@@ -146,7 +157,10 @@ func (m Model) OnWaitMultipleFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd)
 			m.area.value = ""
 			return m, cmd
 		case "ctrl+c":
-			return m, tea.Quit
+			m.StateId = StandardState
+			m.input.value = ""
+			m.area.value = ""
+			return m, cmd
 		default:
 			if !m.area.area.Focused() {
 				cmd = m.area.area.Focus()
@@ -170,6 +184,11 @@ func (m Model) OnWaitDirNameUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 			m.StateId = StandardState
 			m.files = m.repo.GetFilesByParentId(m.GetCurrentOrderId())
+			m.input.value = ""
+			return m, cmd
+		case "ctrl+c":
+			m.input.value = ""
+			m.StateId = StandardState
 			return m, cmd
 		default:
 			m.input.input, cmd = m.input.input.Update(msg)
