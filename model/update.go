@@ -67,7 +67,7 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 					return m, tea.Quit
 				}
 				m.StateId = ShowFileContentState
-				m.fileContent = c.Viewed()
+				m.fileContent = c.View()
 				return m, cmd
 			}
 		}

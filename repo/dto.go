@@ -2,6 +2,7 @@ package repo
 
 import (
 	"fmt"
+	"strings"
 )
 
 type File struct {
@@ -25,6 +26,6 @@ type Content struct {
 	FileContent string
 }
 
-func (c *Content) Viewed() string {
-	return fmt.Sprintf("%s: %s", c.Filename, c.FileContent)
+func (c *Content) View() string {
+	return fmt.Sprintf("name: %s\n%s\n%s", c.Filename, strings.Repeat("_", 20), c.FileContent)
 }

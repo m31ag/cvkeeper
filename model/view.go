@@ -19,46 +19,47 @@ func (m Model) defaultHeader() string {
 				Bold(true).
 				Background(lipgloss.Color("#5f5fff")).
 				Render("CVKeeper")),
-		render(strings.Join(m.history, "/"), historyFormat, historyStyle),
+		//TODO (change lipcloss.NewStyle to var in model or singleton)
+		render(strings.Join(m.history, "/"), historyFormat, lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.vars.Colors.History))),
 	)
 }
 func (m Model) defaultFooter(showHints bool) string {
 	s := ""
 	if showHints {
-		s += fmt.Sprintf("\nPress %s to add one-string, %s to add multiple-string\n"+
+		s += fmt.Sprintf("\nPress %s to add single-string, %s to add multiple-string\n"+
 			"Press %s to create folder\n"+
 			"Press %s to copy file content\n"+
 			"Press %s to delete file/folder\n",
-			styleAndRender("'n'", true, purpleColor),
-			styleAndRender("'N'", true, purpleColor),
-			styleAndRender("'f'", true, purpleColor),
-			styleAndRender("'c'", true, purpleColor),
-			styleAndRender("'d'", true, purpleColor),
+			styleAndRender("'n'", true, m.vars.Colors.HintKey),
+			styleAndRender("'N'", true, m.vars.Colors.HintKey),
+			styleAndRender("'f'", true, m.vars.Colors.HintKey),
+			styleAndRender("'c'", true, m.vars.Colors.HintKey),
+			styleAndRender("'d'", true, m.vars.Colors.HintKey),
 		)
 	}
 	return fmt.Sprint(
 		s,
-		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, purpleColor)),
+		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, m.vars.Colors.HintKey)),
 	)
 }
 func (m Model) inputFooter() string {
 	s := fmt.Sprintf("\nPress %s to cancel\n",
-		styleAndRender("ctrl+c'", true, purpleColor),
+		styleAndRender("'ctrl+c'", true, m.vars.Colors.HintKey),
 	)
 	return fmt.Sprint(
 		s,
-		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, purpleColor)),
+		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, m.vars.Colors.HintKey)),
 	)
 }
 func (m Model) areaFooter() string {
 	s := fmt.Sprintf("\nPress %s to cancel\n"+
 		"Press %s to save\n",
-		styleAndRender("ctrl+c'", true, purpleColor),
-		styleAndRender("ctrl+]'", true, purpleColor),
+		styleAndRender("'ctrl+c'", true, m.vars.Colors.HintKey),
+		styleAndRender("'ctrl+]'", true, m.vars.Colors.HintKey),
 	)
 	return fmt.Sprint(
 		s,
-		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, purpleColor)),
+		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, m.vars.Colors.HintKey)),
 	)
 }
 func (m Model) OnStandardView() string {
@@ -98,9 +99,9 @@ func (m Model) OnDeleteView() string {
 
 		fmt.Sprintf(
 			"%s - delete %s, %s - cancel deleting\n",
-			styleAndRender("'y'", true, purpleColor),
+			styleAndRender("'y'", true, m.vars.Colors.HintKey),
 			m.files[m.cursor].Filename,
-			styleAndRender("'n'", true, purpleColor)),
+			styleAndRender("'n'", true, m.vars.Colors.HintKey)),
 
 		styleAndRender(strings.Repeat("#", 40)+"\n", true, whiteColor),
 

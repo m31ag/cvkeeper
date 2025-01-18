@@ -33,8 +33,7 @@ const (
 )
 
 var (
-	style        = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(purpleColor))
-	historyStyle = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(whiteColor))
+	style = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(purpleColor))
 )
 
 type Input struct {
@@ -55,6 +54,7 @@ type Model struct {
 	area        Area
 	StateId     ViewState
 	fileContent string
+	vars        Vars
 }
 
 func (m Model) GetChecked() repo.File {
@@ -75,9 +75,8 @@ func (m Model) GetCurrentOrderId() int {
 func (m Model) GetCurrentOrder() repo.File {
 	return m.order[len(m.order)-1]
 }
-func InitModel(r repo.Repository) Model {
+func InitModel(r repo.Repository, v Vars) Model {
 	files := r.GetRoot()
-
 	order := make([]repo.File, 0)
 	root := r.GetFilesByParentId(defaultRootId)
 	order = append(order, root[0])
@@ -89,6 +88,7 @@ func InitModel(r repo.Repository) Model {
 		files:   files,
 		order:   order,
 		history: history,
+		vars:    v,
 	}
 }
 func (m Model) Init() tea.Cmd {
@@ -151,6 +151,7 @@ func (m Model) SetArea(placeholder string) Model {
 	t.Placeholder = placeholder
 	t.Focus()
 	m.area.area = t
+	m.area.area.SetWidth(50)
 	return m
 }
 func (m Model) SetDefaultCursor() Model {
@@ -196,5 +197,8 @@ func (m Model) Forward() Model {
 		return m.Back()
 	}
 	return m
+
+}
+func LoadVars() {
 
 }
