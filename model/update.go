@@ -30,7 +30,7 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, cmd
 			}
 		case "b", "left", "h":
-			if len(m.order) > 1 {
+			if len(m.order) > 0 {
 				return m.Back(), cmd
 			}
 		case "f":
@@ -205,7 +205,7 @@ func (m Model) OnShowFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 
 		case "b", "left", "h":
-			if len(m.order) > 1 {
+			if len(m.order) > 0 {
 				return m.Back(), cmd
 			}
 		//TODO(fix duplicates)
