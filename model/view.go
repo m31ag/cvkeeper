@@ -2,8 +2,9 @@ package model
 
 import (
 	"fmt"
-	"github.com/charmbracelet/lipgloss"
 	"strings"
+
+	"github.com/charmbracelet/lipgloss"
 )
 
 func (m Model) defaultHeader() string {
@@ -128,9 +129,9 @@ func showItem(txt string, colored bool) string {
 
 	if colored {
 		return strings.TrimSpace(style.Render(txt))
-	} else {
-		return txt
 	}
+
+	return txt
 
 }
 func styleAndRender(t string, bold bool, color string) string {

@@ -78,7 +78,7 @@ func (r repository) DeleteFolders(parentId int) {
 }
 
 func (r repository) SaveDir(dirName string, parentId int) error {
-	_, err := r.db.Exec("insert into files (filename, is_folder, parent_id) values ($1,true,$3)", dirName, parentId)
+	_, err := r.db.Exec("insert into files (filename, is_folder, parent_id) values ($1,true,$2)", dirName, parentId)
 	return err
 }
 

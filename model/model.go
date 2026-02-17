@@ -52,12 +52,7 @@ func (m Model) GetChecked() repo.File {
 	if len(m.files) > 0 {
 		return m.files[m.cursor]
 	}
-	return repo.File{
-		Id:       0,
-		ParentId: 0,
-		Filename: "",
-		IsFolder: true,
-	}
+	return repo.File{IsFolder: true}
 }
 
 func (m Model) GetCurrentOrderId() int {
@@ -68,17 +63,13 @@ func (m Model) GetCurrentOrder() repo.File {
 }
 func InitModel(r repo.Repository, v Vars) Model {
 	files := r.GetRoot()
-	order := make([]repo.File, 0)
 	root := r.GetFilesByParentId(defaultRootId)
-	order = append(order, root[0])
-	history := make([]string, 0)
-	history = append(history, "/root")
 
 	return Model{
 		repo:    r,
 		files:   files,
-		order:   order,
-		history: history,
+		order:   []repo.File{root[0]},
+		history: []string{"/root"},
 		vars:    v,
 	}
 }
@@ -118,14 +109,37 @@ func (m Model) SetArea(placeholder string) Model {
 	m.area.area.SetWidth(50)
 	return m
 }
-func (m Model) SetDefaultCursor() Model {
-	if len(m.files) > 1 && m.files[0].Id == defaultFirstDirId {
+
+// clampCursor resets cursor to first real file/folder,
+// skipping "/.." back folder if any
+func (m Model) clampCursor() Model {
+	if len(m.files) > 0 && m.files[0].Id == defaultFirstDirId {
 		m.cursor = 1
 	} else {
 		m.cursor = 0
 	}
 	return m
 }
+
+// MoveCursor move cursor on delta positions without going beyond the boundaries
+func (m Model) MoveCursor(delta int) Model {
+	m.cursor = clamp(m.cursor+delta, 0, len(m.files)-1)
+	return m
+}
+
+func clamp(v, lo, hi int) int {
+	if v < lo {
+		return lo
+	}
+	if v > hi {
+		return hi
+	}
+	return v
+}
+
+// Back handles the "back" press.
+// If the content of the file is open, closes it, remaining in the same folder.
+// Otherwise - goes higher.
 func (m Model) Back() Model {
 	// for root folder
 	if len(m.order) == 1 && m.order[0].Id == -1 {
@@ -150,7 +164,7 @@ func (m Model) Back() Model {
 		}
 
 		m.files = files
-		return m.SetDefaultCursor()
+		return m.clampCursor()
 	}
 	return m
 }

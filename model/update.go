@@ -12,7 +12,7 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 
 		switch msg.String() {
-		case "delete":
+		case "d", "delete":
 			if len(m.files) > 0 && m.GetChecked().Id != defaultFirstDirId {
 				m.StateId = DeleteState
 			}
@@ -21,13 +21,11 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			return m, tea.Quit
 		case "up", "k":
 			if m.cursor > 0 {
-				m.cursor--
-				return m, cmd
+				return m.MoveCursor(-1), cmd
 			}
 		case "down", "j":
 			if m.cursor < len(m.files)-1 {
-				m.cursor++
-				return m, cmd
+				return m.MoveCursor(1), cmd
 			}
 		case "b", "left", "h":
 			if len(m.order) > 0 {
@@ -58,18 +56,20 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 			}
 		case "enter", " ", "right", "l":
-			if m.GetChecked().IsFolder {
-				return m.Forward(), cmd
-			} else {
-				c, err := m.repo.GetFileContentByFileId(m.GetChecked().Id)
-				if err != nil {
-					println(err.Error())
-					return m, tea.Quit
-				}
-				m.StateId = ShowFileContentState
-				m.fileContent = c.View()
+			if m.GetChecked().Id == 0 && m.files == nil {
 				return m, cmd
 			}
+			if m.GetChecked().IsFolder {
+				return m.Forward(), cmd
+			}
+			c, err := m.repo.GetFileContentByFileId(m.GetChecked().Id)
+			if err != nil {
+				return m, tea.Quit
+			}
+			m.StateId = ShowFileContentState
+			m.fileContent = c.View()
+			return m, cmd
+
 		}
 	}
 	return m, cmd
@@ -142,7 +142,6 @@ func (m Model) OnWaitFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, cmd
 }
 func (m Model) OnWaitMultipleFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
@@ -165,7 +164,6 @@ func (m Model) OnWaitMultipleFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd)
 			if !m.area.area.Focused() {
 				cmd = m.area.area.Focus()
 			}
-			cmds = append(cmds, cmd)
 			m.area.area, cmd = m.area.area.Update(msg)
 			return m, cmd
 		}
@@ -225,7 +223,7 @@ func (m Model) OnDeleteUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.repo.DeleteFolders(m.GetChecked().Id)
 			m.files = m.repo.GetFilesByParentId(m.GetCurrentOrderId())
 			m.StateId = StandardState
-			return m.SetDefaultCursor(), cmd
+			return m.clampCursor(), cmd
 		case "n":
 			m.StateId = StandardState
 			return m, cmd

@@ -24,7 +24,7 @@ var updateMap = map[ViewState]UpdateFunc{
 	WaitFileContentState:         Model.OnWaitFileContentUpdate,
 	WaitFilenameMultiStringState: Model.OnWaitFilenameMultiStringUpdate,
 	WaitMultipleFileContentState: Model.OnWaitMultipleFileContentUpdate,
-	StandardState:                Model.OnStandardUpdate, // fallback
+	StandardState:                Model.OnStandardUpdate,
 }
 
 // views
