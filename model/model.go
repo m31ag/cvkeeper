@@ -15,7 +15,7 @@ const (
 	whiteColor  = "#FFFFFF"
 
 	defaultRootId     int = 0
-	defaultFirstDirId     = -2
+	defaultFirstDirId int = -2
 
 	emptyCursor   = "  "
 	filledCursor  = "->"
