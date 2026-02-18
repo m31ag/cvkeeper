@@ -36,16 +36,21 @@ type Area struct {
 	value string
 }
 type Model struct {
-	repo        repo.Repository
-	files       []repo.File
-	cursor      int
-	order       []repo.File
-	history     []string
-	input       Input
-	area        Area
-	StateId     ViewState
-	fileContent string
-	vars        Vars
+	repo         repo.Repository
+	files        []repo.File
+	cursor       int
+	order        []repo.File
+	history      []string
+	input        Input
+	confirmInput Input
+	area         Area
+	StateId      ViewState
+	fileContent  string
+	vars         Vars
+	termWidth    int
+	termHeight   int
+	keyHash      string
+	keyError     string
 }
 
 func (m Model) GetChecked() repo.File {
@@ -62,15 +67,32 @@ func (m Model) GetCurrentOrder() repo.File {
 	return m.order[len(m.order)-1]
 }
 func InitModel(r repo.Repository, v Vars) Model {
-	files := r.GetRoot()
-	root := r.GetFilesByParentId(defaultRootId)
+	mk := r.GetMasterKeyOrEmpty()
+	ti := textinput.New()
+	ti.Placeholder = "master key"
+	ti.EchoMode = textinput.EchoPassword // скрываем ввод
+	ti.Focus()
 
+	state := WaitMasterKeyState
+
+	var confirmInput Input
+	if mk == "" {
+		ti2 := textinput.New()
+		ti2.Placeholder = "confirm key"
+		ti2.EchoMode = textinput.EchoPassword
+
+		state = RegisterMasterKeyState
+		confirmInput = Input{input: ti2}
+	}
 	return Model{
-		repo:    r,
-		files:   files,
-		order:   []repo.File{root[0]},
-		history: []string{"/root"},
-		vars:    v,
+		repo:         r,
+		vars:         v,
+		StateId:      state,
+		input:        Input{input: ti},
+		confirmInput: confirmInput,
+		order:        []repo.File{},
+		history:      []string{},
+		keyHash:      mk,
 	}
 }
 func (m Model) Init() tea.Cmd {
@@ -80,6 +102,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	var cmd tea.Cmd
 	switch msg := msg.(type) {
+	case tea.WindowSizeMsg:
+		m.termWidth = msg.Width
+		m.termHeight = msg.Height
+		return m, cmd
 	case tea.KeyMsg:
 		if fn, ok := updateMap[m.StateId]; ok {
 			return fn(m, msg)
@@ -186,6 +212,36 @@ func (m Model) Forward() Model {
 	}
 	return m
 
+}
+func (m Model) BuildFileListMenu() Model {
+
+	files := m.repo.GetRoot()
+	root := m.repo.GetFilesByParentId(defaultRootId)
+	m.order = []repo.File{root[0]}
+	m.history = []string{"/root"}
+	m.files = files
+	m.StateId = StandardState
+	m.input.value = ""
+	m.confirmInput.value = ""
+	return m
+
+}
+func (m Model) saveWithEncrypt(filename, data string) error {
+	d, _ := Encrypt(data, m.keyHash)
+	return m.repo.SaveFileWithContent(filename, d, m.GetCurrentOrderId())
+}
+func (m Model) getDecrypted() (repo.Content, error) {
+
+	d, err := m.repo.GetFileContentByFileId(m.GetChecked().Id)
+	if err != nil {
+		return repo.Content{}, err
+	}
+	e, err := Decrypt(d.FileContent, m.keyHash)
+	if err != nil {
+		return repo.Content{}, err
+	}
+	d.FileContent = e
+	return d, nil
 }
 func LoadVars() {
 

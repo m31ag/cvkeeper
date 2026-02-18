@@ -10,11 +10,21 @@ type Repository interface {
 	GetFileContentByFileId(id int) (Content, error)
 	GetRoot() []File
 	DeleteFolders(parentId int)
+	GetMasterKeyOrEmpty() string
+	SaveMasterKey(k string)
 }
 type repository struct {
 	db *sql.DB
 }
 
+func (r repository) SaveMasterKey(k string) {
+	_, _ = r.db.Exec("update master_key set key_value=$1 where id=1", k)
+}
+func (r repository) GetMasterKeyOrEmpty() (res string) {
+	q := "select key_value from master_key where id=1"
+	_ = r.db.QueryRow(q).Scan(&res)
+	return res
+}
 func (r repository) DeleteFolders(parentId int) {
 	selectQuery := `
 		WITH RECURSIVE file_hierarchy AS (
@@ -157,6 +167,9 @@ func initTables(db *sql.DB) {
 		is_folder bool not null,
 		parent_id int not null
 );`)
+	if err != nil {
+		panic(err)
+	}
 	_, err = db.Exec(`CREATE TABLE IF NOT EXISTS cipher_data (
 		id integer PRIMARY KEY autoincrement,
 		cipher_data varchar not null,
@@ -164,10 +177,19 @@ func initTables(db *sql.DB) {
 		foreign key (files_id) references files (id)
 	
 );`)
+
 	if err != nil {
 		panic(err)
 	}
-
+	_, err = db.Exec(`
+create table if not exists master_key (
+    id integer primary key,
+    key_value varchar not null
+)
+`)
+	if err != nil {
+		panic(err)
+	}
 }
 func initRoot(db *sql.DB) {
 	_, err := db.Exec(`
@@ -176,6 +198,13 @@ func initRoot(db *sql.DB) {
 	WHERE NOT EXISTS (
 		SELECT 1 FROM files WHERE filename = 'root' AND parent_id = 0
 	);
+`)
+	if err != nil {
+		panic(err)
+	}
+	_, err = db.Exec(`
+	insert into master_key (id, key_value)
+	select 1, '' where not exists (select 1 from master_key where id=1);
 `)
 	if err != nil {
 		panic(err)

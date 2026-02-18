@@ -3,6 +3,8 @@ package model
 import tea "github.com/charmbracelet/bubbletea"
 
 const (
+	RegisterMasterKeyState       ViewState = -2 // регистрация
+	WaitMasterKeyState           ViewState = -1 // новый, до StandardState
 	StandardState                ViewState = 0
 	WaitFilenameState            ViewState = 1
 	WaitDirnameState             ViewState = 2
@@ -17,6 +19,8 @@ const (
 type UpdateFunc func(m Model, msg tea.Msg) (tea.Model, tea.Cmd)
 
 var updateMap = map[ViewState]UpdateFunc{
+	RegisterMasterKeyState:       Model.OnRegisterMasterKeyUpdate,
+	WaitMasterKeyState:           Model.OnWaitMasterKeyUpdate,
 	ShowFileContentState:         Model.OnShowFileContentUpdate,
 	DeleteState:                  Model.OnDeleteUpdate,
 	WaitFilenameState:            Model.OnWaitFilenameUpdate,
@@ -31,6 +35,8 @@ var updateMap = map[ViewState]UpdateFunc{
 type ViewFunc func(m Model) string
 
 var viewMap = map[ViewState]ViewFunc{
+	RegisterMasterKeyState:       Model.OnRegisterMasterKeyView,
+	WaitMasterKeyState:           Model.OnWaitMasterKeyView,
 	StandardState:                Model.OnStandardView,
 	ShowFileContentState:         Model.OnShowFileContentView,
 	DeleteState:                  Model.OnDeleteView,

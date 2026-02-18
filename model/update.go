@@ -48,7 +48,7 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		case "c":
 			if !m.GetChecked().IsFolder {
-				s, err := m.repo.GetFileContentByFileId(m.GetChecked().Id)
+				s, err := m.getDecrypted()
 				if err != nil {
 					println(err.Error())
 				}
@@ -62,7 +62,7 @@ func (m Model) OnStandardUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.GetChecked().IsFolder {
 				return m.Forward(), cmd
 			}
-			c, err := m.repo.GetFileContentByFileId(m.GetChecked().Id)
+			c, err := m.getDecrypted()
 			if err != nil {
 				return m, tea.Quit
 			}
@@ -88,6 +88,84 @@ func (m Model) OnWaitFilenameUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.input.value = ""
 			m.StateId = StandardState
 			return m, cmd
+		default:
+			m.input.input, cmd = m.input.input.Update(msg)
+			return m, cmd
+		}
+	}
+	return m, cmd
+}
+func (m Model) OnRegisterMasterKeyUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "tab":
+			// Переключение между полями
+			if m.input.input.Focused() {
+				m.input.input.Blur()
+				m.confirmInput.input.Focus()
+			} else {
+				m.confirmInput.input.Blur()
+				m.input.input.Focus()
+			}
+			return m, cmd
+
+		case "enter":
+			key1 := m.input.input.Value()
+			key2 := m.confirmInput.input.Value()
+
+			if len(key1) > 0 && len(key2) > 0 && len(key1) == len(key2) {
+				if key1 == key2 {
+					h := hash(key1)
+					m.repo.SaveMasterKey(h)
+
+					return m.BuildFileListMenu(), cmd
+				}
+				m.input.input.SetValue("")
+				m.confirmInput.input.SetValue("")
+				m.input.input.Focus()
+				m.confirmInput.input.Blur()
+			}
+			return m, cmd
+
+		case "ctrl+c":
+			return m, tea.Quit
+
+		default:
+			// update active field
+			if m.input.input.Focused() {
+				m.input.input, cmd = m.input.input.Update(msg)
+			} else {
+				m.confirmInput.input, cmd = m.confirmInput.input.Update(msg)
+			}
+			return m, cmd
+		}
+	}
+	return m, cmd
+}
+func (m Model) OnWaitMasterKeyUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
+	var cmd tea.Cmd
+	switch msg := msg.(type) {
+	case tea.KeyMsg:
+		switch msg.String() {
+		case "enter":
+			masterKey := m.input.input.Value()
+
+			if len(masterKey) > 0 {
+				valid := hash(masterKey) == m.keyHash
+				if !valid {
+					m.keyError = "Invalid master key"
+					m.input.input.SetValue("")
+					return m, cmd
+				}
+				return m.BuildFileListMenu(), cmd
+			}
+			return m, cmd
+
+		case "ctrl+c":
+			return m, tea.Quit
+
 		default:
 			m.input.input, cmd = m.input.input.Update(msg)
 			return m, cmd
@@ -123,7 +201,7 @@ func (m Model) OnWaitFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "enter":
-			if err := m.repo.SaveFileWithContent(m.input.value, m.input.input.Value(), m.GetCurrentOrderId()); err != nil {
+			if err := m.saveWithEncrypt(m.input.value, m.input.input.Value()); err != nil {
 				return m, tea.Quit
 			}
 			m.StateId = StandardState
@@ -147,7 +225,7 @@ func (m Model) OnWaitMultipleFileContentUpdate(msg tea.Msg) (tea.Model, tea.Cmd)
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "ctrl+]":
-			if err := m.repo.SaveFileWithContent(m.input.value, m.area.area.Value(), m.GetCurrentOrderId()); err != nil {
+			if err := m.saveWithEncrypt(m.input.value, m.area.area.Value()); err != nil {
 				return m, tea.Quit
 			}
 			m.StateId = StandardState
