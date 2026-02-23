@@ -2,16 +2,23 @@ package model
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v3"
 	"os"
+
+	"github.com/charmbracelet/lipgloss"
+	"gopkg.in/yaml.v3"
 )
 
 type Vars struct {
 	Colors Colors `yaml:"colors"`
 }
 type Colors struct {
-	HintKey string `yaml:"hint_key"`
-	History string `yaml:"history"`
+	HintKey          lipgloss.Color `yaml:"hint_key"`
+	History          lipgloss.Color `yaml:"history"`
+	Selected         lipgloss.Color `yaml:"selected"`
+	DefaultTextColor lipgloss.Color `yaml:"default_text_color"`
+	BoxBorderColor   lipgloss.Color `yaml:"box_border_color"`
+	ErrorTextColor   lipgloss.Color `yaml:"error_text_color"`
+	SuccessTextColor lipgloss.Color `yaml:"success_text_color"`
 }
 
 func NewFromYaml(b []byte) Vars {

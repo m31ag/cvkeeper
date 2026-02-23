@@ -4,16 +4,12 @@ import (
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/m31ag/cvkeeper/repo"
 )
 
 type ViewState int
 
 const (
-	purpleColor = "#CE6797"
-	whiteColor  = "#FFFFFF"
-
 	defaultRootId     int = 0
 	defaultFirstDirId int = -2
 
@@ -21,10 +17,6 @@ const (
 	filledCursor  = "->"
 	menuFormat    = "%s %s %s\n"
 	historyFormat = "\n%s\n\n"
-)
-
-var (
-	style = lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(purpleColor))
 )
 
 type Input struct {

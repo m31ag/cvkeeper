@@ -31,36 +31,36 @@ func (m Model) defaultFooter(showHints bool) string {
 			"Press %s to create folder\n"+
 			"Press %s to copy file content\n"+
 			"Press %s to delete file/folder\n",
-			styleAndRender("'n'", true, m.vars.Colors.HintKey),
-			styleAndRender("'N'", true, m.vars.Colors.HintKey),
-			styleAndRender("'f'", true, m.vars.Colors.HintKey),
-			styleAndRender("'c'", true, m.vars.Colors.HintKey),
-			styleAndRender("'d'", true, m.vars.Colors.HintKey),
+			m.styleAndRender("'n'", true, m.vars.Colors.HintKey),
+			m.styleAndRender("'N'", true, m.vars.Colors.HintKey),
+			m.styleAndRender("'f'", true, m.vars.Colors.HintKey),
+			m.styleAndRender("'c'", true, m.vars.Colors.HintKey),
+			m.styleAndRender("'d'", true, m.vars.Colors.HintKey),
 		)
 	}
 	return fmt.Sprint(
 		s,
-		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, m.vars.Colors.HintKey)),
+		fmt.Sprintf("\nPress %s to quit.\n", m.styleAndRender("'q'", true, m.vars.Colors.HintKey)),
 	)
 }
 func (m Model) inputFooter() string {
 	s := fmt.Sprintf("\nPress %s to cancel\n",
-		styleAndRender("'ctrl+c'", true, m.vars.Colors.HintKey),
+		m.styleAndRender("'ctrl+c'", true, m.vars.Colors.HintKey),
 	)
 	return fmt.Sprint(
 		s,
-		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, m.vars.Colors.HintKey)),
+		fmt.Sprintf("\nPress %s to quit.\n", m.styleAndRender("'q'", true, m.vars.Colors.HintKey)),
 	)
 }
 func (m Model) areaFooter() string {
 	s := fmt.Sprintf("\nPress %s to cancel\n"+
 		"Press %s to save\n",
-		styleAndRender("'ctrl+c'", true, m.vars.Colors.HintKey),
-		styleAndRender("'ctrl+]'", true, m.vars.Colors.HintKey),
+		m.styleAndRender("'ctrl+c'", true, m.vars.Colors.HintKey),
+		m.styleAndRender("'ctrl+]'", true, m.vars.Colors.HintKey),
 	)
 	return fmt.Sprint(
 		s,
-		fmt.Sprintf("\nPress %s to quit.\n", styleAndRender("'q'", true, m.vars.Colors.HintKey)),
+		fmt.Sprintf("\nPress %s to quit.\n", m.styleAndRender("'q'", true, m.vars.Colors.HintKey)),
 	)
 }
 func (m Model) OnStandardView() string {
@@ -79,7 +79,7 @@ func (m Model) OnStandardView() string {
 		if item.IsFolder {
 			suffix = "\U0001F4C1"
 		}
-		list += showItem(fmt.Sprintf(menuFormat, suffix, cursor, item.Filename), colored)
+		list += m.showItem(fmt.Sprintf(menuFormat, suffix, cursor, item.Filename), colored)
 	}
 	return fmt.Sprint(m.defaultHeader(), list, m.defaultFooter(true))
 }
@@ -88,7 +88,7 @@ func (m Model) OnShowFileContentView() string {
 	return fmt.Sprint(
 		m.defaultHeader(),
 		"\n",
-		styleAndRender(m.fileContent, true, whiteColor),
+		m.styleAndRender(m.fileContent, true, ""),
 		"\n",
 		m.defaultFooter(false),
 	)
@@ -96,15 +96,15 @@ func (m Model) OnShowFileContentView() string {
 func (m Model) OnDeleteView() string {
 	return fmt.Sprint(
 		m.defaultHeader(),
-		styleAndRender(strings.Repeat("#", 40)+"\n", true, whiteColor),
+		m.styleAndRender(strings.Repeat("#", 40)+"\n", true, ""),
 
 		fmt.Sprintf(
 			"%s - delete %s, %s - cancel deleting\n",
-			styleAndRender("'y'", true, m.vars.Colors.HintKey),
+			m.styleAndRender("'y'", true, m.vars.Colors.HintKey),
 			m.files[m.cursor].Filename,
-			styleAndRender("'n'", true, m.vars.Colors.HintKey)),
+			m.styleAndRender("'n'", true, m.vars.Colors.HintKey)),
 
-		styleAndRender(strings.Repeat("#", 40)+"\n", true, whiteColor),
+		m.styleAndRender(strings.Repeat("#", 40)+"\n", true, ""),
 
 		m.defaultFooter(false),
 	)
@@ -117,11 +117,11 @@ func (m Model) OnRegisterMasterKeyView() string {
 	if len(key1) > 0 && len(key2) > 0 {
 		if key1 == key2 {
 			matchIndicator = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#00FF00")).
+				Foreground(lipgloss.Color(m.vars.Colors.SuccessTextColor)).
 				Render("✓ Keys match")
 		} else {
 			matchIndicator = lipgloss.NewStyle().
-				Foreground(lipgloss.Color("#FF0000")).
+				Foreground(lipgloss.Color(m.vars.Colors.ErrorTextColor)).
 				Render("✗ Keys don't match")
 		}
 	}
@@ -145,7 +145,7 @@ func (m Model) OnRegisterMasterKeyView() string {
 
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(purpleColor)).
+		BorderForeground(lipgloss.Color(m.vars.Colors.BoxBorderColor)).
 		Padding(1, 2).
 		Width(50)
 
@@ -172,7 +172,7 @@ func (m Model) OnWaitMasterKeyView() string {
 	errorMsg := ""
 	if m.keyError != "" {
 		errorMsg = lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#FF0000")).
+			Foreground(lipgloss.Color(m.vars.Colors.ErrorTextColor)).
 			Bold(true).
 			Render("✗ " + m.keyError)
 	}
@@ -189,18 +189,15 @@ func (m Model) OnWaitMasterKeyView() string {
 			Render("Press Enter to unlock"),
 	)
 
-	// Стиль для бокса
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(lipgloss.Color(purpleColor)).
+		BorderForeground(lipgloss.Color(m.vars.Colors.BoxBorderColor)).
 		Padding(1, 2).
 		Width(40).
 		AlignHorizontal(lipgloss.Center)
 
-	// Рендерим бокс
 	box := boxStyle.Render(boxContent)
 
-	// Центрируем по вертикали и горизонтали
 	return lipgloss.Place(
 		m.termWidth,
 		m.termHeight,
@@ -225,18 +222,19 @@ func (m Model) DefaultAreaView() string {
 	)
 
 }
-func showItem(txt string, colored bool) string {
+func (m Model) showItem(txt string, colored bool) string {
 
 	if colored {
-		return strings.TrimSpace(style.Render(txt))
+		//maybe make const
+		return strings.TrimSpace(lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color(m.vars.Colors.Selected)).Render(txt))
 	}
 
 	return txt
 
 }
-func styleAndRender(t string, bold bool, color string) string {
+func (m Model) styleAndRender(t string, bold bool, color lipgloss.Color) string {
 	if len(color) == 0 {
-		color = whiteColor
+		color = m.vars.Colors.DefaultTextColor
 	}
 	s := lipgloss.NewStyle().Bold(bold).Foreground(lipgloss.Color(color))
 

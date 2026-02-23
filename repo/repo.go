@@ -1,7 +1,10 @@
 package repo
 
-import "database/sql"
-import _ "github.com/mattn/go-sqlite3"
+import (
+	"database/sql"
+
+	_ "github.com/mattn/go-sqlite3"
+)
 
 type Repository interface {
 	SaveFileWithContent(filename, data string, parentId int) error
