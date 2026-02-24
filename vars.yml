@@ -6,3 +6,6 @@ colors:
   box_border_color: '#CE6797'
   error_text_color: '#FF0000'
   success_text_color: '#00FF00'
+  title_background: '#5f5fff'
+  horizontal_separator: '#444444'
+  view_file_title: '#CE6797'

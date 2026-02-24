@@ -13,10 +13,9 @@ const (
 	defaultRootId     int = 0
 	defaultFirstDirId int = -2
 
-	emptyCursor   = "  "
-	filledCursor  = "->"
-	menuFormat    = "%s %s %s\n"
-	historyFormat = "\n%s\n\n"
+	emptyCursor  = "  "
+	filledCursor = "->"
+	menuFormat   = "%s %s %s"
 )
 
 type Input struct {
@@ -37,7 +36,7 @@ type Model struct {
 	confirmInput Input
 	area         Area
 	StateId      ViewState
-	fileContent  string
+	fileContent  repo.Content
 	vars         Vars
 	termWidth    int
 	termHeight   int
@@ -62,7 +61,7 @@ func InitModel(r repo.Repository, v Vars) Model {
 	mk := r.GetMasterKeyOrEmpty()
 	ti := textinput.New()
 	ti.Placeholder = "master key"
-	ti.EchoMode = textinput.EchoPassword // скрываем ввод
+	ti.EchoMode = textinput.EchoPassword
 	ti.Focus()
 
 	state := WaitMasterKeyState
@@ -161,8 +160,8 @@ func clamp(v, lo, hi int) int {
 func (m Model) Back() Model {
 	// for root folder
 	if len(m.order) == 1 && m.order[0].Id == -1 {
-		if len(m.fileContent) > 0 {
-			m.fileContent = ""
+		if !m.fileContent.IsEmpty() {
+			m.fileContent = repo.Content{}
 			m.StateId = StandardState
 		}
 		return m
@@ -171,9 +170,9 @@ func (m Model) Back() Model {
 	//any nested folder
 	if len(m.order) > 0 {
 		var files []repo.File
-		if len(m.fileContent) > 0 {
+		if !m.fileContent.IsEmpty() {
 			files = m.repo.GetFilesByParentId(m.order[len(m.order)-1].Id)
-			m.fileContent = ""
+			m.fileContent = repo.Content{}
 			m.StateId = StandardState
 		} else {
 			files = m.repo.GetFilesByParentId(m.order[len(m.order)-1].ParentId)

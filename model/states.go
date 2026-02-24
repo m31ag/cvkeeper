@@ -3,8 +3,8 @@ package model
 import tea "github.com/charmbracelet/bubbletea"
 
 const (
-	RegisterMasterKeyState       ViewState = -2 // регистрация
-	WaitMasterKeyState           ViewState = -1 // новый, до StandardState
+	RegisterMasterKeyState       ViewState = -2
+	WaitMasterKeyState           ViewState = -1
 	StandardState                ViewState = 0
 	WaitFilenameState            ViewState = 1
 	WaitDirnameState             ViewState = 2

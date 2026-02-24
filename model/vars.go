@@ -12,13 +12,16 @@ type Vars struct {
 	Colors Colors `yaml:"colors"`
 }
 type Colors struct {
-	HintKey          lipgloss.Color `yaml:"hint_key"`
-	History          lipgloss.Color `yaml:"history"`
-	Selected         lipgloss.Color `yaml:"selected"`
-	DefaultTextColor lipgloss.Color `yaml:"default_text_color"`
-	BoxBorderColor   lipgloss.Color `yaml:"box_border_color"`
-	ErrorTextColor   lipgloss.Color `yaml:"error_text_color"`
-	SuccessTextColor lipgloss.Color `yaml:"success_text_color"`
+	HintKey             lipgloss.Color `yaml:"hint_key"`
+	History             lipgloss.Color `yaml:"history"`
+	Selected            lipgloss.Color `yaml:"selected"`
+	DefaultTextColor    lipgloss.Color `yaml:"default_text_color"`
+	BoxBorderColor      lipgloss.Color `yaml:"box_border_color"`
+	ErrorTextColor      lipgloss.Color `yaml:"error_text_color"`
+	SuccessTextColor    lipgloss.Color `yaml:"success_text_color"`
+	TitleBackground     lipgloss.Color `yaml:"title_background"`
+	HorizontalSeparator lipgloss.Color `yaml:"horizontal_separator"`
+	ViewFileTitle       lipgloss.Color `yaml:"view_file_title"`
 }
 
 func NewFromYaml(b []byte) Vars {
