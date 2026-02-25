@@ -1,6 +1,8 @@
 package model
 
 import (
+	"strings"
+
 	"github.com/charmbracelet/bubbles/textarea"
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -13,9 +15,12 @@ const (
 	defaultRootId     int = 0
 	defaultFirstDirId int = -2
 
-	emptyCursor  = "  "
 	filledCursor = "->"
 	menuFormat   = "%s %s %s"
+)
+
+var (
+	emptyCursor = strings.Repeat(" ", len(filledCursor))
 )
 
 type Input struct {
@@ -60,7 +65,7 @@ func (m Model) GetCurrentOrder() repo.File {
 func InitModel(r repo.Repository, v Vars) Model {
 	mk := r.GetMasterKeyOrEmpty()
 	ti := textinput.New()
-	ti.Placeholder = "master key"
+	ti.Placeholder = MasterKeyPlaceholder
 	ti.EchoMode = textinput.EchoPassword
 	ti.Focus()
 
@@ -69,7 +74,7 @@ func InitModel(r repo.Repository, v Vars) Model {
 	var confirmInput Input
 	if mk == "" {
 		ti2 := textinput.New()
-		ti2.Placeholder = "confirm key"
+		ti2.Placeholder = ConfirmMasterKeyPlaceholder
 		ti2.EchoMode = textinput.EchoPassword
 
 		state = RegisterMasterKeyState
@@ -233,7 +238,4 @@ func (m Model) getDecrypted() (repo.Content, error) {
 	}
 	d.FileContent = e
 	return d, nil
-}
-func LoadVars() {
-
 }

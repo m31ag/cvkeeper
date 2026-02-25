@@ -2,86 +2,10 @@ package model
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/charmbracelet/lipgloss"
 )
 
-func (m Model) defaultHeader() string {
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		Bold().
-			MarginLeft(20).
-			PaddingLeft(10).
-			PaddingRight(10).
-			MarginBottom(1).
-			AlignHorizontal(lipgloss.Center).
-			Background(m.vars.Colors.TitleBackground).
-			Render("CVKeeper"),
-		Bold().Foreground(m.vars.Colors.History).Render(strings.Join(m.history, "/")),
-		lipgloss.NewStyle().
-			Foreground(m.vars.Colors.HorizontalSeparator).
-			Render(strings.Repeat("─", 70)),
-		"",
-	)
-
-}
-func (m Model) defaultFooter(showHints bool) string {
-	hints := []string{}
-	hints = append(hints,
-		lipgloss.NewStyle().
-			Foreground(m.vars.Colors.HorizontalSeparator).
-			Render(strings.Repeat("─", 70)),
-	)
-	if showHints {
-		hints = append(hints,
-
-			fmt.Sprintf(
-				"Press %s to add single-string, %s to add multiple-string",
-				Bold().Foreground(m.vars.Colors.HintKey).Render("'n'"),
-				Bold().Foreground(m.vars.Colors.HintKey).Render("'N'"),
-			),
-			fmt.Sprintf("Press %s to create folder", Bold().Foreground(m.vars.Colors.HintKey).Render("'f'")),
-			fmt.Sprintf("Press %s to copy file content", Bold().Foreground(m.vars.Colors.HintKey).Render("'c'")),
-			fmt.Sprintf("Press %s to delete file/folder", Bold().Foreground(m.vars.Colors.HintKey).Render("'d'")),
-			"",
-		)
-	}
-	hints = append(hints, fmt.Sprintf("Press %s to quit", Bold().Foreground(m.vars.Colors.HintKey).Render("'q'")))
-	return lipgloss.JoinVertical(lipgloss.Left, hints...)
-}
-func (m Model) inputFooter() string {
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		"",
-		lipgloss.NewStyle().
-			Foreground(m.vars.Colors.HorizontalSeparator).
-			Render(strings.Repeat("─", 70)),
-
-		fmt.Sprintf("Press %s to cancel",
-			Bold().Foreground(m.vars.Colors.HintKey).Render("'ctrl+c'")),
-		"",
-		fmt.Sprintf("Press %s to quit.", Bold().Foreground(m.vars.Colors.HintKey).Render("'q'")),
-	)
-
-}
-func (m Model) areaFooter() string {
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		"",
-		lipgloss.NewStyle().
-			Foreground(m.vars.Colors.HorizontalSeparator).
-			Render(strings.Repeat("─", 70)),
-
-		fmt.Sprintf("Press %s to cancel",
-			Bold().Foreground(m.vars.Colors.HintKey).Render("'ctrl+c'")),
-		fmt.Sprintf("Press %s to save",
-			Bold().Foreground(m.vars.Colors.HintKey).Render("'ctrl+]'")),
-		"",
-		fmt.Sprintf("Press %s to quit.", Bold().Foreground(m.vars.Colors.HintKey).Render("'q'")),
-	)
-
-}
 func (m Model) OnStandardView() string {
 	list := make([]string, 0)
 	for i, item := range m.files {
@@ -94,9 +18,9 @@ func (m Model) OnStandardView() string {
 		}
 
 		// Render the row
-		suffix := "\U0001F4C4"
+		suffix := m.vars.Icons.File
 		if item.IsFolder {
-			suffix = "\U0001F4C1"
+			suffix = m.vars.Icons.Folder
 		}
 		t := fmt.Sprintf(menuFormat, suffix, cursor, item.Filename)
 
@@ -121,10 +45,6 @@ func (m Model) OnShowFileContentView() string {
 		Foreground(m.vars.Colors.ViewFileTitle).
 		Render(m.fileContent.Filename)
 
-	separator := lipgloss.NewStyle().
-		Foreground(m.vars.Colors.HorizontalSeparator).
-		Render(strings.Repeat("─", 50))
-
 	content := lipgloss.NewStyle().
 		Foreground(m.vars.Colors.DefaultTextColor).
 		PaddingTop(1).
@@ -134,8 +54,8 @@ func (m Model) OnShowFileContentView() string {
 	c := lipgloss.JoinVertical(
 		lipgloss.Left,
 		title,
-		separator,
-		lipgloss.JoinHorizontal(lipgloss.Center, "🔑 ", content),
+		m.Separator(50),
+		lipgloss.JoinHorizontal(lipgloss.Center, m.vars.Icons.CipherData, " ", content),
 	)
 
 	return lipgloss.JoinVertical(
@@ -151,9 +71,9 @@ func (m Model) OnDeleteView() string {
 		m.defaultHeader(),
 		fmt.Sprintf(
 			"%s - delete %s, %s - cancel deleting",
-			Bold().Foreground(m.vars.Colors.HintKey).Render("'y'"),
+			m.DefaultHint("'y'"),
 			m.files[m.cursor].Filename,
-			Bold().Foreground(m.vars.Colors.HintKey).Render("'n'")),
+			m.DefaultHint("'n'")),
 		"",
 		m.defaultFooter(false),
 	)
@@ -167,29 +87,32 @@ func (m Model) OnRegisterMasterKeyView() string {
 		if key1 == key2 {
 			matchIndicator = lipgloss.NewStyle().
 				Foreground(m.vars.Colors.SuccessTextColor).
-				Render("✓ Keys match")
+				Render(KeyMatchMessage)
 		} else {
 			matchIndicator = lipgloss.NewStyle().
 				Foreground(m.vars.Colors.ErrorTextColor).
-				Render("✗ Keys don't match")
+				Render(KeyDontMatchMessage)
 		}
 	}
 
 	boxContent := lipgloss.JoinVertical(
 		lipgloss.Left,
-		Bold().Render("🔐 Register Master Key"),
+		Bold().Render(m.vars.Icons.MasterKey, RegisterMasterKey),
 		"",
-		Faint().Render("Enter key:"),
+		lipgloss.NewStyle().Foreground(m.vars.Colors.DefaultTextColor).Render(EnterMasterKeyLabel),
 		m.input.input.View(),
 		"",
-		Faint().Render("Confirm key:"),
+		lipgloss.NewStyle().Foreground(m.vars.Colors.DefaultTextColor).Render(ConfirmMasterKeyLable),
 		m.confirmInput.input.View(),
 		"",
 		matchIndicator,
 		"",
-		lipgloss.NewStyle().
-			Foreground(m.vars.Colors.HintKey).
-			Render("Tab to switch • Enter to confirm"),
+		lipgloss.JoinHorizontal(
+			lipgloss.Left,
+			fmt.Sprintf("%s to switch", m.DefaultHint("'Tab'")),
+			" • ",
+			fmt.Sprintf("%s to confirm", m.DefaultHint("'Enter'")),
+		),
 	)
 
 	boxStyle := RoundedBorder().
@@ -199,18 +122,9 @@ func (m Model) OnRegisterMasterKeyView() string {
 
 	box := boxStyle.Render(boxContent)
 
-	width := m.termWidth
-	height := m.termHeight
-	if width == 0 {
-		width = 80
-	}
-	if height == 0 {
-		height = 24
-	}
-
 	return lipgloss.Place(
-		width,
-		height,
+		m.termWidth,
+		m.termHeight,
 		lipgloss.Center,
 		lipgloss.Center,
 		box,
@@ -225,15 +139,13 @@ func (m Model) OnWaitMasterKeyView() string {
 	}
 	boxContent := lipgloss.JoinVertical(
 		lipgloss.Left,
-		Bold().Render("🔐 Master Key"),
+		Bold().Render(m.vars.Icons.MasterKey, MasterKeyLabel),
 		"",
 		m.input.input.View(),
 		"",
 		errorMsg,
 		"",
-		lipgloss.NewStyle().
-			Foreground(m.vars.Colors.HintKey).
-			Render("Press Enter to unlock"),
+		fmt.Sprintf("Press %s to unlock", m.DefaultHint("'Enter'")),
 	)
 
 	boxStyle := RoundedBorder().
@@ -251,22 +163,4 @@ func (m Model) OnWaitMasterKeyView() string {
 		lipgloss.Center,
 		box,
 	)
-}
-func (m Model) DefaultInputView() string {
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		m.defaultHeader(),
-		m.input.input.View(),
-		m.inputFooter(),
-	)
-
-}
-func (m Model) DefaultAreaView() string {
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		m.defaultHeader(),
-		m.area.area.View(),
-		m.areaFooter(),
-	)
-
 }

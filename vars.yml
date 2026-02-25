@@ -9,3 +9,11 @@ colors:
   title_background: '#5f5fff'
   horizontal_separator: '#444444'
   view_file_title: '#CE6797'
+
+sizes:
+
+icons:
+  folder: '📁'
+  cipher_data: '🔑'
+  file: '📄'
+  register_key: '🔐'

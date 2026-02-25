@@ -10,6 +10,8 @@ import (
 
 type Vars struct {
 	Colors Colors `yaml:"colors"`
+	Sizes  Sizes  `yaml:"sizes"`
+	Icons  Icons  `yaml:"icons"`
 }
 type Colors struct {
 	HintKey             lipgloss.Color `yaml:"hint_key"`
@@ -22,6 +24,14 @@ type Colors struct {
 	TitleBackground     lipgloss.Color `yaml:"title_background"`
 	HorizontalSeparator lipgloss.Color `yaml:"horizontal_separator"`
 	ViewFileTitle       lipgloss.Color `yaml:"view_file_title"`
+}
+type Sizes struct {
+}
+type Icons struct {
+	Folder     string `yaml:"folder"`
+	CipherData string `yaml:"cipher_data"`
+	File       string `yaml:"file"`
+	MasterKey  string `yaml:"register_key"`
 }
 
 func NewFromYaml(b []byte) Vars {
