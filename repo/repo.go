@@ -154,8 +154,8 @@ func (r repository) GetFilesByParentId(id int) []File {
 
 	return files
 }
-func NewRepo() Repository {
-	db, err := sql.Open("sqlite3", "store.db")
+func NewRepo(path string) Repository {
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		panic(err)
 	}
