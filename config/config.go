@@ -34,6 +34,9 @@ func Load() (*Config, error) {
 	}, nil
 }
 
+// getDBPath
+// get db path from os enviroment CVKEEPER_DB
+// if env is empty, creates .db in ~/.config/cvkeeper directory
 func getDBPath() (string, error) {
 	if dbPath := os.Getenv("CVKEEPER_DB"); dbPath != "" {
 		return dbPath, nil
@@ -54,6 +57,10 @@ func getDBPath() (string, error) {
 	return dbPath, nil
 }
 
+// loadVars
+// gets variables for app from os env CVKEEPER_VARS
+// if env is empty, tries to get from ~/.config/cvkeeper/vars.yml
+// if config is empty, tries to fetch template of vars.yml from github gist and save into ~/.config/cvkeeper/ directory
 func loadVars() ([]byte, error) {
 	if varsPath := os.Getenv("CVKEEPER_VARS"); varsPath != "" {
 		return os.ReadFile(varsPath)
